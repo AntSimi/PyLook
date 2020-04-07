@@ -3,6 +3,7 @@
 import netCDF4
 import numba
 import numpy
+import matplotlib.collections as mc
 
 
 class GSHHSFile:
@@ -58,12 +59,12 @@ class GSHHSFile:
             self.i_first_pt_seg = h.variables[self.INDEX_FIRST_PT_IN_SEG][:]
 
 
-    def lines(self, llcrnrlon=0, llcrnrlat=-90, urcrnrlon=360, urcrnrlat=90):
-        new_x, new_y = get_lines(
+    def lines(self, llcrnrlon=0, llcrnrlat=-90, urcrnrlon=360, urcrnrlat=90, **kwargs_line_collection):
+        lines = get_lines(
             self.relative_x, self.relative_y,
             self.nb_seg_bin, self.i_first_seg_bin, self.nb_pt_seg, self.i_first_pt_seg,
             self.nb_bin_x, self.nb_bin_y, self.bin_size, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat)
-        return new_x, new_y
+        return mc.LineCollection((lines,), **kwargs_line_collection)
 
 
 class CoastFile(GSHHSFile):
@@ -99,6 +100,7 @@ def get_lines(
     j0, j1 = nb_bin_y - int((urcrnrlat + 90) // bin_size), nb_bin_y - int((llcrnrlat + 90) // bin_size)
     new_x, new_y = list(), list()
     nb_pt = 0
+    nb_box = 0
     for j in range(j0, j1):
         for i in range(i0, i1):
             i_box = int(i % nb_bin_x + nb_bin_x * j)
@@ -119,19 +121,15 @@ def get_lines(
             new_x.append(x)
             new_y.append(y)
             nb_pt += x.shape[0]
-    x = numpy.empty(nb_pt, dtype=numba.float32)
-    y = numpy.empty(nb_pt, dtype=numba.float32)
+            nb_box += 1
+    lines = numpy.empty((2, nb_pt), dtype=numba.float32)
     i = 0
-    for x_ in new_x:
-        nb = x_.shape[0]
-        x[i: i + nb] = x_
+    for i_box in range(nb_box):
+        nb = new_x[i_box].shape[0]
+        lines[0, i: i + nb] = new_x[i_box]
+        lines[1, i: i + nb] = new_y[i_box]
         i += nb
-    i = 0
-    for y_ in new_y:
-        nb = y_.shape[0]
-        y[i: i + nb] = y_
-        i += nb
-    return x, y
+    return lines.T
 
 @numba.njit(cache=True)
 def break_lines(x, y, i_first_pt):
