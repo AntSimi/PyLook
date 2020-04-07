@@ -87,7 +87,7 @@ class CoastFile(GSHHSFile):
             self.nb_bin_x, self.nb_bin_y, self.bin_size, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat)
         
         polygons = build_polygon(x, y, nb_pt_seg, id_seg)
-        # print(len(polygons), id_seg.shape)
+        print(len(polygons), id_seg.shape)
         kwargs_polygon['linewidth'] = 0
         kwargs_polygon['closed'] = False
         return mc.PolyCollection(polygons, **kwargs_polygon)
@@ -270,8 +270,8 @@ def get_data_for_polygon(
 def get_lines(
         relative_x, relative_y, nb_seg_bin, i_first_seg_bin, nb_pt_seg, i_first_pt_seg,
         nb_bin_x, nb_bin_y, bin_size, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat):
-    i0, i1 = int(llcrnrlon // bin_size), int(urcrnrlon // bin_size)
-    j0, j1 = nb_bin_y - int((urcrnrlat + 90) // bin_size), nb_bin_y - int((llcrnrlat + 90) // bin_size)
+    i0, i1 = int(llcrnrlon // bin_size), int(numpy.ceil(urcrnrlon / bin_size))
+    j0, j1 = nb_bin_y - int(numpy.ceil((urcrnrlat + 90) / bin_size)), nb_bin_y - int((llcrnrlat + 90) // bin_size)
     new_x, new_y = list(), list()
     nb_pt = 0
     nb_box = 0
