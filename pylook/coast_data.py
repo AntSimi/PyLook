@@ -28,19 +28,6 @@ class GSHHSFile:
     INDEX_FIRST_SEG_IN_BIN = 'Id_of_first_segment_in_a_bin'
     NB_SEG_BY_BIN = 'N_segments_in_a_bin'
     INDEX_FIRST_PT_IN_SEG = 'Id_of_first_point_in_a_segment'
-    # int N_polygons_in_file(Dimension_of_scalar) ;
-    # int N_segments_in_file(Dimension_of_scalar) ;
-    # int N_points_in_file(Dimension_of_scalar) ;
-    # int N_nodes_in_file(Dimension_of_scalar) ;
-    # int Id_of_parent_polygons(Dimension_of_polygon_array) ;
-    # double The_km_squared_area_of_polygons(Dimension_of_polygon_array) ;
-    # int Micro_fraction_of_full_resolution_area(Dimension_of_polygon_array) ;
-    # int Id_of_node_polygons(Dimension_of_node_arrays) ;
-    # short Embedded_node_levels_in_a_bin(Dimension_of_bin_arrays) ;
-    # short Embedded_node_levels_in_a_bin_ANT(Dimension_of_bin_arrays) ;
-    # int Embedded_npts_levels_exit_entry_for_a_segment(Dimension_of_segment_arrays) ;
-    # int Id_of_GSHHS_ID(Dimension_of_segment_arrays) ;
-    # byte Embedded_ANT_flag(Dimension_of_segment_arrays) ;
 
 
     def __init__(self, filename):
@@ -69,16 +56,41 @@ class GSHHSFile:
 
 class CoastFile(GSHHSFile):
 
-    __slots__ = tuple()
+    __slots__ = (
+        'level_seg',
+        'id_seg'
+    )
     SEG_INFO = 'Embedded_npts_levels_exit_entry_for_a_segment'
+    POLYGON_ID = 'Id_of_GSHHS_ID'
+    # int Id_of_parent_polygons(Dimension_of_polygon_array) ;
+    # double The_km_squared_area_of_polygons(Dimension_of_polygon_array) ;
+    # int Micro_fraction_of_full_resolution_area(Dimension_of_polygon_array) ;
+    # int Id_of_node_polygons(Dimension_of_node_arrays) ;
+    # short Embedded_node_levels_in_a_bin(Dimension_of_bin_arrays) ;
+    # short Embedded_node_levels_in_a_bin_ANT(Dimension_of_bin_arrays) ;
+    
+    # byte Embedded_ANT_flag(Dimension_of_segment_arrays) ;
 
     def load(self, filename):
         super(CoastFile, self).load(filename)
         with netCDF4.Dataset(filename) as h:
             h.set_auto_maskandscale(False)
-            seg_info = h.variables [self.SEG_INFO][:]
+            seg_info = h.variables[self.SEG_INFO][:]
             self.nb_pt_seg = seg_info >> 9
+            self.level_seg = (seg_info >> 6) & 0x7
+            self.id_seg = h.variables[self.POLYGON_ID][:]
 
+    def polygons(self, llcrnrlon=0, llcrnrlat=-90, urcrnrlon=360, urcrnrlat=90, **kwargs_polygon):
+        x, y, nb_pt_seg, id_seg  = get_data_for_polygon(
+            self.relative_x, self.relative_y,
+            self.nb_seg_bin, self.i_first_seg_bin, self.nb_pt_seg, self.i_first_pt_seg, self.id_seg,
+            self.nb_bin_x, self.nb_bin_y, self.bin_size, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat)
+        
+        polygons = build_polygon(x, y, nb_pt_seg, id_seg)
+        # print(len(polygons), id_seg.shape)
+        kwargs_polygon['linewidth'] = 0
+        kwargs_polygon['closed'] = False
+        return mc.PolyCollection(polygons, **kwargs_polygon)
 
 class BorderRiverFile(GSHHSFile):
 
@@ -91,6 +103,82 @@ class BorderRiverFile(GSHHSFile):
             h.set_auto_maskandscale(False)
             self.nb_pt_seg = h.variables [self.SEG_INFO][:]
 
+
+@numba.njit(cache=True)
+def build_polygon(x, y, nb_pt_seg, id_seg):
+    polygons = list()
+    i = 0
+    for nb in nb_pt_seg:
+        i1 = i + nb - 1
+        if x[i] == x[i1] and y[i] == y[i1]:
+            sl = slice(i, i1)
+            polygons.append(build_vertice(x[sl], y[sl]))
+        i += nb
+    return polygons
+
+
+@numba.njit(cache=True)
+def build_vertice(x, y):
+    nb = x.shape[0]
+    pt = numpy.empty((nb, 2), dtype=x.dtype)
+    pt[:, 0] = x
+    pt[:, 1] = y
+    return pt
+
+
+@numba.njit(cache=True)
+def get_data_for_polygon(
+        relative_x, relative_y, nb_seg_bin, i_first_seg_bin, nb_pt_seg, i_first_pt_seg, id_seg,
+        nb_bin_x, nb_bin_y, bin_size, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat):
+    i0, i1 = int(llcrnrlon // bin_size), int(urcrnrlon // bin_size)
+    j0, j1 = nb_bin_y - int((urcrnrlat + 90) // bin_size), nb_bin_y - int((llcrnrlat + 90) // bin_size)
+    new_x, new_y = list(), list()
+    nb_pt_seg_list, id_seg_list = list(), list()
+    nb_seg_list = list()
+    nb_box = 0
+    nb_pt = 0
+    nb_seg = 0
+    for j in range(j0, j1):
+        for i in range(i0, i1):
+            i_box = int(i % nb_bin_x + nb_bin_x * j)
+
+            nb_seg_box = nb_seg_bin[i_box]
+            if nb_seg_box == 0:
+                continue
+            start_seg = i_first_seg_bin[i_box]
+            last_seg = start_seg + nb_seg_box - 1
+
+            start_pt = i_first_pt_seg[start_seg]
+            last_pt = i_first_pt_seg[last_seg] + nb_pt_seg[last_seg]
+            sl_seg = slice(start_seg, last_seg + 1)
+            sl_pt = slice(start_pt, last_pt)
+            # re-reference data
+            x = (relative_x[sl_pt] / 65535. + i) * bin_size
+            y = (relative_y[sl_pt] / 65535. + nb_bin_y - j) * bin_size - 90. - bin_size
+            new_x.append(x)
+            new_y.append(y)
+            id_seg_list.append(id_seg[sl_seg])
+            nb_pt_seg_list.append(nb_pt_seg[sl_seg])
+            nb_box += 1
+            nb_pt += x.shape[0]
+            nb_seg += nb_seg_box
+            nb_seg_list.append(nb_seg_box)
+    x = numpy.empty(nb_pt, dtype=numba.float32)
+    y = numpy.empty(nb_pt, dtype=numba.float32)
+    nb_pt_seg = numpy.empty(nb_seg, dtype=nb_pt_seg.dtype)
+    id_seg = numpy.empty(nb_seg, dtype=id_seg.dtype)
+    i = 0
+    i_seg = 0
+    for i_box in range(nb_box):
+        nb = new_x[i_box].shape[0]
+        nb_seg = nb_seg_list[i_box]
+        x[i: i + nb] = new_x[i_box]
+        y[i: i + nb] = new_y[i_box]
+        nb_pt_seg[i_seg: i_seg + nb_seg] = nb_pt_seg_list[i_box]
+        id_seg[i_seg: i_seg + nb_seg] = id_seg_list[i_box]
+        i += nb
+        i_seg += nb_seg
+    return x, y, nb_pt_seg, id_seg
 
 @numba.njit(cache=True)
 def get_lines(
@@ -115,13 +203,16 @@ def get_lines(
             last_pt = i_first_pt_seg[last_seg] + nb_pt_seg[last_seg]
             sl_seg = slice(start_seg, last_seg + 1)
             sl_pt = slice(start_pt, last_pt)
+            # re-reference data
             x = (relative_x[sl_pt] / 65535. + i) * bin_size
             y = (relative_y[sl_pt] / 65535. + nb_bin_y - j) * bin_size - 90. - bin_size
+            # Insert nan
             x, y = break_lines(x, y, i_first_pt_seg[sl_seg] - start_pt)
             new_x.append(x)
             new_y.append(y)
             nb_pt += x.shape[0]
             nb_box += 1
+    # Create a vertices
     lines = numpy.empty((2, nb_pt), dtype=numba.float32)
     i = 0
     for i_box in range(nb_box):
@@ -130,6 +221,7 @@ def get_lines(
         lines[1, i: i + nb] = new_y[i_box]
         i += nb
     return lines.T
+
 
 @numba.njit(cache=True)
 def break_lines(x, y, i_first_pt):
