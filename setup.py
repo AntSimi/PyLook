@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from distutils.core import setup
+from setuptools import setup
 
 min_version = (3, 7)
 
@@ -16,5 +16,5 @@ setup(name='pylook',
             'pyproj',
             'numba',
       ],
-      python_requires=f'>={'.'join(min_version)}'
+      python_requires=f'>={".".join(str(i) for i in min_version)}'
       )
