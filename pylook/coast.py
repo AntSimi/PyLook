@@ -115,7 +115,7 @@ class BorderRiverFile(GSHHSFile):
             self.nb_pt_seg = h.variables [self.SEG_INFO][:]
 
 
-@njit(cache=True)
+@njit
 def get_next(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join, used, x_last, y_last):
     """Find next segment which share same point
     """
@@ -142,7 +142,7 @@ def get_next(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join, used, x_last, y_
     return id_contiguous
 
 
-@numba.njit(cache=True)
+@njit
 def build_vertice(x, y):
     nb = x.shape[0]
     pt = numpy.empty((nb, 2), dtype=x.dtype)
@@ -151,7 +151,7 @@ def build_vertice(x, y):
     return pt
 
 
-@numba.njit(cache=True)
+@njit
 def get_data_for_polygon(
         relative_x, relative_y, nb_seg_bin, i_first_seg_bin, nb_pt_seg, i_first_pt_seg, id_seg,
         nb_bin_x, nb_bin_y, bin_size, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat):
@@ -205,7 +205,7 @@ def get_data_for_polygon(
         i_seg += nb_seg
     return x, y, nb_pt_seg, id_seg
 
-@numba.njit(cache=True)
+@njit
 def get_lines(
         relative_x, relative_y, nb_seg_bin, i_first_seg_bin, nb_pt_seg, i_first_pt_seg,
         nb_bin_x, nb_bin_y, bin_size, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat):
@@ -248,7 +248,7 @@ def get_lines(
     return lines.T
 
 
-@numba.njit(cache=True)
+@njit
 def break_lines(x, y, i_first_pt):
     nb_seg = i_first_pt.shape[0]
     nb_pt = x.shape[0]
@@ -272,7 +272,7 @@ def break_lines(x, y, i_first_pt):
 
 
 
-@numba.njit(cache=True)
+@njit
 def build_polygon(x, y, nb_pt_seg, id_seg):
     polygons = list()
     i = 0
@@ -304,7 +304,7 @@ def build_polygon(x, y, nb_pt_seg, id_seg):
             polygons.append(segs[0])
     return polygons
 
-@numba.njit(cache=True)
+@njit
 def search_and_join_contiguous_segment(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join):
     nb = id_to_join.shape[0]
     used = numpy.zeros(nb, dtype=numba.bool_)
@@ -320,7 +320,7 @@ def search_and_join_contiguous_segment(x, y, first_pt_seg, nb_pt_seg, id_seg, id
 
 
 
-@numba.njit(cache=True)
+@njit
 def get_vertices(x, y, first_pt_seg, nb_pt_seg, id_list):
     nb = 1
     for i in id_list:
