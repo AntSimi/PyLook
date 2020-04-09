@@ -5,6 +5,7 @@ import matplotlib.ticker as mticker
 import os
 import pyproj
 import numpy 
+import numba
 from . import coast 
 
 
@@ -94,25 +95,63 @@ class PlatCarreAxes(MapAxes):
 class ProjTransform(mtransforms.Transform):
     input_dims = 2
     output_dims = 2
-    is_separable = False
-    has_inverse = True
 
     def __init__(self, name, lon0, lat0, ellps, inverted=False):
         self.name = name
         self.lon0, self.lat0 = lon0, lat0
         self.ellps = ellps
         self.proj = pyproj.Proj(proj=self.name, lat_0=self.lat0, lon_0=self.lon0, ellps=self.ellps)
+        self.invalid = self.proj(numpy.nan, numpy.nan, inverse=inverted)[0]
         self.flag_inverted = inverted
         super(ProjTransform, self).__init__(self)
 
     def transform_non_affine(self, vertices):
-        invalid = self.proj(numpy.nan, numpy.nan)[0]
-        coordinates = numpy.array(self.proj(vertices[:, 0], vertices[:, 1], inverse=self.flag_inverted))
-        coordinates[coordinates == invalid] = numpy.nan
-        return coordinates.T
+        return reduce_array(*self.proj(vertices[:, 0], vertices[:, 1], inverse=self.flag_inverted), invalid=self.invalid)
 
     def inverted(self):
         return self.__class__(self.name, self.lon0, self.lat0, self.ellps, inverted=~self.flag_inverted)
+
+
+@numba.njit(cache=True)
+def reduce_array(xs, ys, invalid):
+    """Could add parameter to simplify path"""
+    nb_in = xs.shape[0]
+    if nb_in < 10:
+        # Only replace of invalid, merge and transpose
+        vertice = numpy.empty((nb_in, 2), dtype=xs.dtype)
+        for i in range(nb_in):
+            if xs[i] == invalid or ys[i] == invalid:
+                vertice[i, 0] = numpy.nan
+                vertice[i, 1] = numpy.nan
+            else:
+                vertice[i, 0] = xs[i]
+                vertice[i, 1] = ys[i]
+    else:
+        # Remove all consecutive invalid value to reduce array
+        m = numpy.empty(nb_in, dtype=numba.bool_)
+        previous_nan = False
+        for i in range(nb_in):
+            x, y = xs[i], ys[i]
+            if x == invalid or y == invalid or numpy.isnan(x) or numpy.isnan(y):
+                if previous_nan:
+                    m[i] = False
+                else:
+                    xs[i] = numpy.nan
+                    ys[i] = numpy.nan
+                    m[i] = True
+                    previous_nan = True
+            else:
+                m[i] = True
+                previous_nan = False
+        nb = m.sum()
+        vertice = numpy.empty((nb, 2), dtype=xs.dtype)
+        i_ = 0
+        for i in range(nb_in):
+            if m[i] == 1:
+                vertice[i_, 0] = xs[i]
+                vertice[i_, 1] = ys[i]
+                i_ += 1
+    return vertice
 
 
 class TransformAxes(MapAxes):
@@ -244,11 +283,11 @@ class TransformAxes(MapAxes):
         return False
 
     def start_pan(self, x, y, button):
-        self.pan_ori = self.transData.inverted().transform_point((x, y))
+        self._pan_start = self.transData.inverted().transform_point((x, y))
 
     def drag_pan(self, button, key, x, y):
         pan_current = self.transData.inverted().transform_point((x, y))
-        delta = self.pan_ori - pan_current
+        delta = self._pan_start - pan_current
         if numpy.isnan(delta).any():
             return
         self.go_to(self.lon0 + delta[0], self.lat0 + delta[1])
@@ -281,6 +320,6 @@ class OrthoAxes(TransformAxes):
     
 
 def register_projection():
-    from matplotlib.projections import projection_registry
+    import matplotlib.projections as mprojections
     for axes in (PlatCarreAxes, OrthoAxes):
-        projection_registry._all_projection_types[axes.name] = axes
+        mprojections.register_projection(axes)
