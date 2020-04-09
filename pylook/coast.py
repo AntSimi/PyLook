@@ -5,7 +5,17 @@ import numba
 import numpy
 import matplotlib.collections as mc
 import os
-print('env var', os.environ.get('NUMBA_CACHE_DIR'))
+
+
+def njit(sig: str):
+    def decorator(func):
+        try:
+            return numba.njit(sig, cache=True)(func)
+        except RuntimeError:
+            # Work around issues with permissions on readthedocs
+            return numba.njit(sig, cache=False)(func)
+    return decorator
+
 
 class GSHHSFile:
 
@@ -105,7 +115,7 @@ class BorderRiverFile(GSHHSFile):
             self.nb_pt_seg = h.variables [self.SEG_INFO][:]
 
 
-@numba.njit(cache=True)
+@njit(cache=True)
 def get_next(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join, used, x_last, y_last):
     """Find next segment which share same point
     """
