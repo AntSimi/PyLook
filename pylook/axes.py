@@ -5,6 +5,7 @@ import matplotlib.ticker as mticker
 import os
 import pyproj
 import numpy 
+import numba
 from . import coast 
 
 
@@ -111,7 +112,7 @@ class ProjTransform(mtransforms.Transform):
         return self.__class__(self.name, self.lon0, self.lat0, self.ellps, inverted=~self.flag_inverted)
 
 
-@coast.njit
+@njit
 def reduce_array(xs, ys, invalid):
     """Could add parameter to simplify path"""
     nb_in = xs.shape[0]
