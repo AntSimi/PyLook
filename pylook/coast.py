@@ -4,7 +4,8 @@ import netCDF4
 import numba
 import numpy
 import matplotlib.collections as mc
-
+import os
+print('env var', os.environ.get('NUMBA_CACHE_DIR'))
 
 class GSHHSFile:
 
@@ -102,78 +103,6 @@ class BorderRiverFile(GSHHSFile):
         with netCDF4.Dataset(filename) as h:
             h.set_auto_maskandscale(False)
             self.nb_pt_seg = h.variables [self.SEG_INFO][:]
-
-
-@numba.njit(cache=True)
-def build_polygon(x, y, nb_pt_seg, id_seg):
-    polygons = list()
-    i = 0
-    nb_seg = id_seg.shape[0]
-    used = numpy.zeros(nb_seg, dtype=numba.bool_)
-    # polygon with only one segment
-    for j, nb in enumerate(nb_pt_seg):
-        i1 = i + nb - 1
-        if x[i] == x[i1] and y[i] == y[i1]:
-            sl = slice(i, i1)
-            polygons.append(build_vertice(x[sl], y[sl]))
-            used[j] = True
-        i += nb
-    i_sort = id_seg.argsort()
-    id_sort = id_seg[i_sort]
-    i_first = nb_pt_seg.cumsum() - nb_pt_seg
-    # segs = dict()
-    # Solve  complex polygon
-    for i, index in enumerate(i_sort):
-        if used[index]:
-            continue
-        current_id = id_seg[index]
-        j = i + 1
-        while j < nb_seg and current_id == id_seg[i_sort[j]]:
-            j += 1
-        used[i_sort[i:j]] = True
-        segs = search_and_join_contiguous_segment(x, y, i_first, nb_pt_seg, id_seg, i_sort[i:j])
-        if len(segs) == 1 and (segs[0][0] == segs[0][-1]).all():
-            polygons.append(segs[0])
-    return polygons
-
-@numba.njit(cache=True)
-def search_and_join_contiguous_segment(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join):
-    nb = id_to_join.shape[0]
-    used = numpy.zeros(nb, dtype=numba.bool_)
-    segs = list()
-    for i in range(nb):
-        if used[i]:
-            continue
-        last_index = first_pt_seg[id_to_join[i]] + nb_pt_seg[id_to_join[i]] - 1
-        x_last, y_last = x[last_index], y[last_index]
-        id_list = get_next(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join, used, x_last, y_last)
-        segs.append(get_vertices(x, y, first_pt_seg, nb_pt_seg, id_list))
-    return segs
-
-
-
-@numba.njit(cache=True)
-def get_vertices(x, y, first_pt_seg, nb_pt_seg, id_list):
-    nb = 1
-    for i in id_list:
-        nb += nb_pt_seg[i] - 1
-    vertice = numpy.empty((nb,2), dtype=x.dtype)
-
-    j = 0
-    for i in id_list:
-        size_seg = nb_pt_seg[i]
-        if i != id_list[-1]:
-            sl_in = slice(first_pt_seg[i], first_pt_seg[i] + size_seg - 1)
-            j1 = j + size_seg - 1
-        else:
-            sl_in = slice(first_pt_seg[i], first_pt_seg[i] + size_seg)
-            j1 = j + size_seg
-        sl_out = slice(j, j1)
-        vertice[sl_out, 0] = x[sl_in]
-        vertice[sl_out, 1] = y[sl_in]
-        j = j1
-    return vertice
-
 
 
 @numba.njit(cache=True)
@@ -330,3 +259,76 @@ def break_lines(x, y, i_first_pt):
     new_x[-1] = numpy.nan
     new_y[-1] = numpy.nan
     return new_x, new_y
+
+
+
+@numba.njit(cache=True)
+def build_polygon(x, y, nb_pt_seg, id_seg):
+    polygons = list()
+    i = 0
+    nb_seg = id_seg.shape[0]
+    used = numpy.zeros(nb_seg, dtype=numba.bool_)
+    # polygon with only one segment
+    for j, nb in enumerate(nb_pt_seg):
+        i1 = i + nb - 1
+        if x[i] == x[i1] and y[i] == y[i1]:
+            sl = slice(i, i1)
+            polygons.append(build_vertice(x[sl], y[sl]))
+            used[j] = True
+        i += nb
+    i_sort = id_seg.argsort()
+    id_sort = id_seg[i_sort]
+    i_first = nb_pt_seg.cumsum() - nb_pt_seg
+    # segs = dict()
+    # Solve  complex polygon
+    for i, index in enumerate(i_sort):
+        if used[index]:
+            continue
+        current_id = id_seg[index]
+        j = i + 1
+        while j < nb_seg and current_id == id_seg[i_sort[j]]:
+            j += 1
+        used[i_sort[i:j]] = True
+        segs = search_and_join_contiguous_segment(x, y, i_first, nb_pt_seg, id_seg, i_sort[i:j])
+        if len(segs) == 1 and (segs[0][0] == segs[0][-1]).all():
+            polygons.append(segs[0])
+    return polygons
+
+@numba.njit(cache=True)
+def search_and_join_contiguous_segment(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join):
+    nb = id_to_join.shape[0]
+    used = numpy.zeros(nb, dtype=numba.bool_)
+    segs = list()
+    for i in range(nb):
+        if used[i]:
+            continue
+        last_index = first_pt_seg[id_to_join[i]] + nb_pt_seg[id_to_join[i]] - 1
+        x_last, y_last = x[last_index], y[last_index]
+        id_list = get_next(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join, used, x_last, y_last)
+        segs.append(get_vertices(x, y, first_pt_seg, nb_pt_seg, id_list))
+    return segs
+
+
+
+@numba.njit(cache=True)
+def get_vertices(x, y, first_pt_seg, nb_pt_seg, id_list):
+    nb = 1
+    for i in id_list:
+        nb += nb_pt_seg[i] - 1
+    vertice = numpy.empty((nb,2), dtype=x.dtype)
+
+    j = 0
+    for i in id_list:
+        size_seg = nb_pt_seg[i]
+        if i != id_list[-1]:
+            sl_in = slice(first_pt_seg[i], first_pt_seg[i] + size_seg - 1)
+            j1 = j + size_seg - 1
+        else:
+            sl_in = slice(first_pt_seg[i], first_pt_seg[i] + size_seg)
+            j1 = j + size_seg
+        sl_out = slice(j, j1)
+        vertice[sl_out, 0] = x[sl_in]
+        vertice[sl_out, 1] = y[sl_in]
+        j = j1
+    return vertice
+
