@@ -178,8 +178,8 @@ def get_data_for_polygon(
             nb_pt += x.shape[0]
             nb_seg += nb_seg_box
             nb_seg_list.append(nb_seg_box)
-    x = numpy.empty(nb_pt, dtype=numba.float32)
-    y = numpy.empty(nb_pt, dtype=numba.float32)
+    x = numpy.empty(nb_pt, dtype=numpy.float32)
+    y = numpy.empty(nb_pt, dtype=numpy.float32)
     nb_pt_seg = numpy.empty(nb_seg, dtype=nb_pt_seg.dtype)
     id_seg = numpy.empty(nb_seg, dtype=id_seg.dtype)
     i = 0
@@ -228,7 +228,7 @@ def get_lines(
             nb_pt += x.shape[0]
             nb_box += 1
     # Create a vertices
-    lines = numpy.empty((2, nb_pt), dtype=numba.float32)
+    lines = numpy.empty((2, nb_pt), dtype=numpy.float32)
     i = 0
     for i_box in range(nb_box):
         nb = new_x[i_box].shape[0]
@@ -267,7 +267,7 @@ def build_polygon(x, y, nb_pt_seg, id_seg):
     polygons = list()
     i = 0
     nb_seg = id_seg.shape[0]
-    used = numpy.zeros(nb_seg, dtype=numba.bool_)
+    used = numpy.zeros(nb_seg, dtype=numpy.bool_)
     # polygon with only one segment
     for j, nb in enumerate(nb_pt_seg):
         i1 = i + nb - 1
@@ -297,7 +297,7 @@ def build_polygon(x, y, nb_pt_seg, id_seg):
 @numba.njit(cache=True)
 def search_and_join_contiguous_segment(x, y, first_pt_seg, nb_pt_seg, id_seg, id_to_join):
     nb = id_to_join.shape[0]
-    used = numpy.zeros(nb, dtype=numba.bool_)
+    used = numpy.zeros(nb, dtype=numpy.bool_)
     segs = list()
     for i in range(nb):
         if used[i]:

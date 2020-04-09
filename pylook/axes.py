@@ -112,7 +112,7 @@ class ProjTransform(mtransforms.Transform):
         return self.__class__(self.name, self.lon0, self.lat0, self.ellps, inverted=~self.flag_inverted)
 
 
-@njit
+@numba.njit
 def reduce_array(xs, ys, invalid):
     """Could add parameter to simplify path"""
     nb_in = xs.shape[0]
@@ -128,7 +128,7 @@ def reduce_array(xs, ys, invalid):
                 vertice[i, 1] = ys[i]
     else:
         # Remove all consecutive invalid value to reduce array
-        m = numpy.empty(nb_in, dtype=numba.bool_)
+        m = numpy.empty(nb_in, dtype=numpy.bool_)
         previous_nan = False
         for i in range(nb_in):
             x, y = xs[i], ys[i]
