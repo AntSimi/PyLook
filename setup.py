@@ -16,5 +16,6 @@ setup(name='pylook',
             'pyproj',
             'numba',
       ],
-      python_requires=f'>={".".join(str(i) for i in min_version)}'
+      python_requires=f'>={".".join(str(i) for i in min_version)}',
+      package_data={'pylook': ['gshhs_backup/*.nc']},
       )

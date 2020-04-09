@@ -3,6 +3,7 @@ import matplotlib.axes
 import matplotlib.axis as maxis
 import matplotlib.ticker as mticker
 import os
+import os.path
 import pyproj
 import numpy 
 import numba
@@ -39,10 +40,17 @@ class MapAxes(PyLookAxes):
 
     @property
     def coast_object(self):
-        res = self.gshhs_resolution
-        if res not in self._coast_object:
-            self._coast_object[res] = coast.CoastFile(f'{os.environ["GSHHS_DATA"]}/binned_GSHHS_{res}.nc')
-        return self._coast_object[res]
+        if 'GSHHS_DATA' in os.environ:
+            res = self.gshhs_resolution
+            if res not in self._coast_object:
+                self._coast_object[res] = coast.CoastFile(f'{os.environ["GSHHS_DATA"]}/binned_GSHHS_{res}.nc')
+            return self._coast_object[res]
+        else:
+            res = 'l'
+            if res not in self._coast_object:
+                fwd = os.path.join(os.path.dirname(__file__))
+                self._coast_object[res] = coast.CoastFile(f'{fwd}/gshhs_backup/binned_GSHHS_{res}.nc')
+            return self._coast_object[res]
 
     def update_env(self):
         xlim, ylim = self.coordinates_bbox
