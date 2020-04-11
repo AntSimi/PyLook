@@ -11,5 +11,6 @@ export GSHHS_DATA=gshhg-gmt-2.3.7
 
 To install
 ```bash
+conda install matplotlib numpy numba netCDF4 pyproj pyqt
 python setup.py install
 ```
