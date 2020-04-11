@@ -66,13 +66,48 @@
    <widget class="QWidget" name="data_widget">
     <layout class="QVBoxLayout" name="data_layout">
      <item>
-      <widget class="QTreeWidget" name="data_tree">
+      <widget class="DataTree" name="data_tree">
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
        <column>
         <property name="text">
          <string notr="true">1</string>
         </property>
        </column>
       </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="filter_layout">
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>Files</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="data_regexp">
+         <property name="text">
+          <string>*</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Var</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="var_regexp"/>
+       </item>
+      </layout>
      </item>
     </layout>
    </widget>
@@ -188,6 +223,11 @@
    <extends>QTreeWidget</extends>
    <header>.figures_tree</header>
   </customwidget>
+  <customwidget>
+   <class>DataTree</class>
+   <extends>QTreeWidget</extends>
+   <header>.data_tree</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>data_tree</tabstop>
@@ -195,5 +235,38 @@
   <tabstop>figures_tab_dock</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>data_regexp</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>data_tree</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>157</x>
+     <y>277</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>153</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>var_regexp</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>data_tree</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>151</x>
+     <y>277</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

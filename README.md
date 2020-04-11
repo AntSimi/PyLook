@@ -14,3 +14,8 @@ To install
 conda install matplotlib numpy numba netCDF4 pyproj pyqt
 python setup.py install
 ```
+
+Executable
+```bash
+PyLook
+```
