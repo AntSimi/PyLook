@@ -93,12 +93,78 @@
    <widget class="QWidget" name="figures_widget">
     <layout class="QVBoxLayout" name="figures_layout">
      <item>
-      <widget class="QTreeWidget" name="figures_tree">
+      <widget class="FiguresTree" name="figures_tree">
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="editTriggers">
+        <set>QAbstractItemView::DoubleClicked</set>
+       </property>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
+       </property>
+       <property name="indentation">
+        <number>10</number>
+       </property>
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="allColumnsShowFocus">
+        <bool>false</bool>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
        <column>
         <property name="text">
-         <string notr="true">1</string>
+         <string notr="true">key</string>
         </property>
        </column>
+       <column>
+        <property name="text">
+         <string>value</string>
+        </property>
+       </column>
+       <item>
+        <property name="text">
+         <string>All</string>
+        </property>
+        <item>
+         <property name="text">
+          <string>urcrnrlon</string>
+         </property>
+         <property name="text">
+          <string>180</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>urcrnlat</string>
+         </property>
+         <property name="text">
+          <string>90</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>llcrnrlon</string>
+         </property>
+         <property name="text">
+          <string>-180</string>
+         </property>
+         <property name="flags">
+          <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>llcrnrlat</string>
+         </property>
+         <property name="text">
+          <string>-90</string>
+         </property>
+        </item>
+       </item>
       </widget>
      </item>
     </layout>
@@ -116,6 +182,11 @@
    <extends>QTabWidget</extends>
    <header>.tabs</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>FiguresTree</class>
+   <extends>QTreeWidget</extends>
+   <header>.figures_tree</header>
   </customwidget>
  </customwidgets>
  <tabstops>

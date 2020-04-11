@@ -12,11 +12,12 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
         self.add_figure(self.start_tab)
+        self.figures_tree.expandAll()
 
     @staticmethod
     def add_figure(tab):
         f = mfigure.Figure()
-        ax = f.add_subplot(111, projection='plat_carre', coast=True) 
+        ax = f.add_subplot(111, projection='ortho', coast=True) 
         ax.grid(True)
         f.canvas = FigureCanvasQTAgg(f)
         f.toolbar = NavigationToolbar2QT(f.canvas, tab)
