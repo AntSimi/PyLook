@@ -11,11 +11,10 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        self.add_figure(self.tab)
-        self.add_figure(self.tab_2)
-        self.tabWidget.make_undock()
-    
-    def add_figure(self, tab):
+        self.add_figure(self.start_tab)
+
+    @staticmethod
+    def add_figure(tab):
         f = mfigure.Figure()
         ax = f.add_subplot(111, projection='plat_carre', coast=True) 
         ax.grid(True)
@@ -25,7 +24,6 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
         vbox.addWidget(f.canvas)
         vbox.addWidget(f.toolbar)
         tab.setLayout(vbox)
-
 
 
 def pylook():
