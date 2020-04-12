@@ -45,7 +45,7 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen"/>
+    <addaction name="open_files"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -67,12 +67,21 @@
     <layout class="QVBoxLayout" name="data_layout">
      <item>
       <widget class="DataTree" name="data_tree">
+       <property name="editTriggers">
+        <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
+       <property name="sortingEnabled">
+        <bool>true</bool>
+       </property>
        <property name="wordWrap">
         <bool>true</bool>
        </property>
+       <property name="headerHidden">
+        <bool>false</bool>
+       </property>
        <column>
         <property name="text">
-         <string notr="true">1</string>
+         <string notr="true">Variable</string>
         </property>
        </column>
       </widget>
@@ -205,7 +214,7 @@
     </layout>
    </widget>
   </widget>
-  <action name="actionOpen">
+  <action name="open_files">
    <property name="text">
     <string>Open</string>
    </property>
@@ -259,12 +268,28 @@
    <slot>update()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>151</x>
-     <y>277</y>
+     <x>182</x>
+     <y>323</y>
     </hint>
     <hint type="destinationlabel">
      <x>136</x>
      <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>open_files</sender>
+   <signal>triggered()</signal>
+   <receiver>data_tree</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>94</x>
+     <y>37</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>154</y>
     </hint>
    </hints>
   </connection>

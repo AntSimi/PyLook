@@ -15,11 +15,13 @@ setup(name='pylook',
             'netCDF4',
             'pyproj',
             'numba',
+            'zarr'
       ],
       python_requires=f'>={".".join(str(i) for i in min_version)}',
       package_data={'pylook': ['gshhs_backup/*.nc']},
       entry_points=dict(
             console_scripts=[
                   'PyLook = pylook.appli:pylook',
+                  'DHeader = pylook.appli:dataheader',
                   ]),
       )

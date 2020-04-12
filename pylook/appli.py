@@ -49,7 +49,7 @@ class PyLookParser(GenericParser):
         super(PyLookParser, self).__init__(*args, **kwargs)
         self.standard_argument()
         group = self.add_argument_group('Data')
-        group.add_argument('filenames', nargs='+')
+        group.add_argument('filenames', nargs='*')
 
     def parse_args(self, *args, **kwargs):
         args = super(GenericParser, self).parse_args(*args, **kwargs)
@@ -67,3 +67,14 @@ def pylook():
     main_window.data_tree.populate()
     main_window.show()
     app.exec_()
+
+
+def dataheader():
+    parser = PyLookParser('PyLook, interactive data explorer')
+    parser.add_argument('--full', action='store_true')
+    args = parser.parse_args()
+    d = DataStore()
+    if args.full:
+        print(d)
+    else:
+        print(d.summary())
