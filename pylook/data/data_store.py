@@ -51,11 +51,12 @@ class DataStore:
             self.store = dict()
 
         def add_file(self, filename):
-            self.store[filename] = NetCDFDataset(filename)
+            new = NetCDFDataset(filename)
+            self.store[new.key] = new
+            return new.key
 
         def add_files(self, filenames):
-            for filename in filenames:
-                self.add_file(filename)
+            return list(self.add_file(filename) for filename in filenames)
 
         @property
         def files(self):
@@ -99,6 +100,9 @@ class BaseDataset:
         )
     )
 
+    CLASSIC_GEO_COORDINATES_X = set(i[0] for i in CLASSIC_GEO_COORDINATES)
+    CLASSIC_GEO_COORDINATES_Y = set(i[1] for i in CLASSIC_GEO_COORDINATES)
+
     CLASSIC_TIME_COORDINATES = set(("time", "time_ref",))
 
     CLASSIC_DEPTH_COORDINATES = set(("depth",))
@@ -109,16 +113,15 @@ class BaseDataset:
         "attrs",
         "handler",
         "coordinates",
+        "key",
     )
 
     def __init__(self, path):
         self.path = path
         self.handler = None
-        self.children = None
-        self.attrs = None
-        self.coordinates = None
         self.populate()
         self.find_coordinates_variables()
+        self.key = self.genkey()
 
     def __str__(self):
         children = "\n\t".join(
@@ -130,18 +133,23 @@ class BaseDataset:
         return f"{self.path}\n\t\t{attrs}\n\t{children}"
 
     def summary(self, color_bash=False):
-        children = "\n\t".join(
+        children = "\n    ".join(
             self.children[i].summary(color_bash) for i in self.children
         )
-        if color_bash:
-            return f"\033[4;34m{self.path}\033[0m\n\t{children}"
-        else:
-            return f"{self.path}\n\t{children}"
+        header = f"\033[4;34m{self.path}\033[0m" if color_bash else self.path
+        return f"""{header}
+        Time coordinates : {self.coordinates['time']}
+        Depth coordinates : {self.coordinates['depth']}
+        Geo coordinates : {self.coordinates['geo']}
+    {children}"""
 
     def open(self):
         raise Exception("must be define")
 
     def populate(self):
+        raise Exception("must be define")
+
+    def genkey(self):
         raise Exception("must be define")
 
     def close(self):
@@ -152,14 +160,15 @@ class BaseDataset:
         return self.children.keys()
 
     def find_coordinates_variables(self):
-        variables = set(self.variables)
+        variables = set(i.lower() for i in self.variables)
         self.coordinates = dict(
             depth=variables & self.CLASSIC_DEPTH_COORDINATES,
             time=variables & self.CLASSIC_TIME_COORDINATES,
+            geo=(
+                variables & self.CLASSIC_GEO_COORDINATES_X,
+                variables & self.CLASSIC_GEO_COORDINATES_Y,
+            ),
         )
-        print(self.CLASSIC_GEO_COORDINATES)
-        print(variables)
-        self.coordinates["geo"] = None
 
 
 class BaseVariable:
@@ -206,6 +215,9 @@ class NetCDFDataset(BaseDataset):
             return True
         return False
 
+    def genkey(self):
+        return self.path
+
     def close(self):
         self.handler.close()
         self.handler = None
@@ -246,3 +258,6 @@ class NetCDFVariable(BaseVariable):
     def dimensions(self):
         return self.attrs["__dimensions"]
 
+
+class MemoryDataset(BaseDataset):
+    pass
