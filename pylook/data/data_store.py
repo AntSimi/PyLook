@@ -74,11 +74,15 @@ class DataStore:
                 elts.append(dataset.__str__())
             return '\n'.join(elts)
 
-        def summary(self):
+        def summary(self, color_bash=False):
             elts = list()
             for key, dataset in self.store.items():
-                elts.append(dataset.summary())
-            return '\n'.join(elts)
+                elts.append(dataset.summary(color_bash))
+            child = '\n'.join(elts)
+            if color_bash:
+                return f'\033[4;32m{len(elts)} dataset(s)\033[0m\n{child}'
+            else:
+                return f'{len(elts)} dataset(s)\n{child}'
 
     
 class BaseDataset:
@@ -125,10 +129,13 @@ class BaseDataset:
         attrs = '\n\t\t'.join(f'{key} : {self.attrs[key]}'for key in keys)
         return f'{self.path}\n\t\t{attrs}\n\t{children}'
 
-    def summary(self):
-        children = '\n\t'.join(self.children[i].summary() for i in self.children)
-        return f'{self.path}\n\t{children}'
-
+    def summary(self, color_bash=False):
+        children = '\n\t'.join(self.children[i].summary(color_bash) for i in self.children)
+        if color_bash:
+            return f'\033[4;34m{self.path}\033[0m\n\t{children}'
+        else:
+            return f'{self.path}\n\t{children}'
+    
     def open(self):
         raise Exception('must be define')
 
@@ -174,8 +181,11 @@ class BaseVariable:
         attrs = '\n\t'.join(f'{key} : {self.attrs[key]}'for key in keys)
         return f'{self.name}\n\t{attrs}'
     
-    def summary(self):
-        return f'{self.name}{self.dimensions}'
+    def summary(self, color_bash):
+        if color_bash:
+            return f'{self.name}\033[0;93m{self.dimensions}\033[0m'
+        else:
+            return f'{self.name}{self.dimensions}'
 
 
     @property

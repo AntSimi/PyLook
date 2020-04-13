@@ -77,4 +77,4 @@ def dataheader():
     if args.full:
         print(d)
     else:
-        print(d.summary())
+        print(d.summary(color_bash=True))
