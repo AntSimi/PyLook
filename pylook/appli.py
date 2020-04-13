@@ -7,8 +7,8 @@ import matplotlib.figure as mfigure
 from .ui.pylook import Ui_MainWindow
 from .data.data_store import DataStore
 
-class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
 
+class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
@@ -18,8 +18,10 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
     @staticmethod
     def add_figure(tab):
         f = mfigure.Figure()
-        # ax = f.add_axes([0,0,1,1], projection='plat_carre', coast=True) 
-        ax = f.add_subplot(111, projection='plat_carre', coast=True, maximize_screen=True) 
+        # ax = f.add_axes([0,0,1,1], projection='plat_carre', coast=True)
+        ax = f.add_subplot(
+            111, projection="plat_carre", coast=True, maximize_screen=True
+        )
         ax.grid(True)
         f.canvas = FigureCanvasQTAgg(f)
         f.toolbar = NavigationToolbar2QT(f.canvas, tab)
@@ -30,26 +32,26 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 class GenericParser(argparse.ArgumentParser):
-    
     def standard_argument(self):
         self.add_argument(
-            '-v', '--verbose',
-            default='WARNING',
-            choices=('DEBUG', 'INFO', 'WARNING', 'ERROR'),
+            "-v",
+            "--verbose",
+            default="WARNING",
+            choices=("DEBUG", "INFO", "WARNING", "ERROR"),
             # action=,
-            )
+        )
 
     def parse_args(self, *args, **kwargs):
         args = super(GenericParser, self).parse_args(*args, **kwargs)
         return args
 
-class PyLookParser(GenericParser):
 
+class PyLookParser(GenericParser):
     def __init__(self, *args, **kwargs):
         super(PyLookParser, self).__init__(*args, **kwargs)
         self.standard_argument()
-        group = self.add_argument_group('Data')
-        group.add_argument('filenames', nargs='*')
+        group = self.add_argument_group("Data")
+        group.add_argument("filenames", nargs="*")
 
     def parse_args(self, *args, **kwargs):
         args = super(GenericParser, self).parse_args(*args, **kwargs)
@@ -59,7 +61,7 @@ class PyLookParser(GenericParser):
 
 
 def pylook():
-    parser = PyLookParser('PyLook, interactive data explorer')
+    parser = PyLookParser("PyLook, interactive data explorer")
     args = parser.parse_args()
 
     app = PyQt5.QtWidgets.QApplication(sys.argv)
@@ -70,8 +72,8 @@ def pylook():
 
 
 def dataheader():
-    parser = PyLookParser('PyLook, interactive data explorer')
-    parser.add_argument('--full', action='store_true')
+    parser = PyLookParser("PyLook, interactive data explorer")
+    parser.add_argument("--full", action="store_true")
     args = parser.parse_args()
     d = DataStore()
     if args.full:

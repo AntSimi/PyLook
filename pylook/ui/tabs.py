@@ -2,7 +2,6 @@ from PyQt5 import QtWidgets, QtGui
 
 
 class TabWidget(QtWidgets.QTabWidget):
-
     def __init__(self, parent=None, *args, **kwargs):
         super(TabWidget, self).__init__(parent=None, *args, **kwargs)
         self.parent = parent
@@ -40,4 +39,3 @@ class TabWidget(QtWidgets.QTabWidget):
         widget_from_tab.show()
         window.show()
         window.move(QtGui.QCursor.pos())
-

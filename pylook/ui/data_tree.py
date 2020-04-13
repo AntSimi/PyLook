@@ -3,14 +3,16 @@ import re
 from PyQt5 import QtWidgets
 from ..data import data_store
 
+
 class DataTree(QtWidgets.QTreeWidget):
-      
     def __init__(self, *args, **kwargs):
         super(DataTree, self).__init__(*args, **kwargs)
         self.data_store = data_store.DataStore()
 
     def populate(self):
-        files_present = [self.topLevelItem(i).data(0, 1) for i in range(self.topLevelItemCount())]
+        files_present = [
+            self.topLevelItem(i).data(0, 1) for i in range(self.topLevelItemCount())
+        ]
         elts = list()
         for filename in self.data_store.files:
             if filename in files_present:
@@ -24,21 +26,21 @@ class DataTree(QtWidgets.QTreeWidget):
 
     def update(self, event):
         sender = self.sender().objectName()
-        if sender in ['data_regexp', 'var_regexp']:
+        if sender in ["data_regexp", "var_regexp"]:
             try:
                 expr = re.compile(event).search
             except:
-                return 
+                return
             for i in range(self.topLevelItemCount()):
                 elt = self.topLevelItem(i)
-                if sender == 'data_regexp':
-                    elt.setHidden(expr(elt.data(0,1)) is None)
-        elif sender == 'open_files':
+                if sender == "data_regexp":
+                    elt.setHidden(expr(elt.data(0, 1)) is None)
+        elif sender == "open_files":
             filenames, extension = QtWidgets.QFileDialog.getOpenFileNames(
-                caption='File(s) to explore',
+                caption="File(s) to explore",
                 initialFilter=self.compile_filter(self.data_store.known_extensions[:1]),
                 filter=self.compile_filter(self.data_store.known_extensions),
-                )
+            )
             self.data_store.add_files(filenames)
             self.populate()
 
@@ -52,6 +54,5 @@ class DataTree(QtWidgets.QTreeWidget):
             for filetype in filetypes:
                 caption, extensions = filetype
                 exps.append(f'{caption} ({" ".join(extensions)})')
-            return ';;'.join(exps)
+            return ";;".join(exps)
 
-            
