@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>images/geo.svg</file>
+        <file>images/time.png</file>
+        <file>images/depth.svg</file>
+    </qresource>
+</RCC>

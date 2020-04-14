@@ -1,5 +1,6 @@
 import netCDF4
 import numpy
+import os.path
 
 
 def handler_access(method):
@@ -43,12 +44,19 @@ class DataStore:
     def __setattr__(self, name):
         return setattr(self.instance, name)
 
+    def __iter__(self):
+        return self.instance.__iter__()
+
     class __DataStore:
 
         __slots__ = ("store",)
 
         def __init__(self):
             self.store = dict()
+            
+        def __iter__(self):
+            for elt in self.store.values():
+                yield elt
 
         def add_path(self, filename):
             new = NetCDFDataset(filename)
@@ -127,6 +135,10 @@ class BaseDataset:
     def __str__(self):
         return self.summary(True)
 
+    def __iter__(self):
+        for child in self.children.values():
+            yield child
+
     @staticmethod
     def repr_coordinates(values):
         return {",".join(k): v for k, v in values.items()}
@@ -161,9 +173,17 @@ class BaseDataset:
         raise Exception("must be define")
 
     @property
+    def last_name(self):
+        return os.path.basename(self.path)
+    
+    @property
+    def dirname(self):
+        return os.path.dirname(self.path)
+    
+    @property
     def name(self):
         return self.path
-    
+
     def close(self):
         raise Exception("must be define")
 
@@ -192,7 +212,9 @@ class BaseDataset:
                     self.children[x_].dimensions,
                     self.children[y_].dimensions,
                 )
-                self.sort_dims(set(dims_x).union(set(dims_y)) , dict(x=x_, y=y_), format_coordinates)
+                self.sort_dims(
+                    set(dims_x).union(set(dims_y)), dict(x=x_, y=y_), format_coordinates
+                )
             else:
                 i_ = inverse[i]
                 self.sort_dims(self.children[i_].dimensions, i_, format_coordinates)

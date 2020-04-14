@@ -69,7 +69,7 @@ d.add_dataset(
 )
 d.add_dataset(
     MD(
-        "2D_data_unstruct",
+        "2D_data_unstructred",
         MV("lon", np.arange(20).repeat(20).reshape(20, 20), dimensions=("x", "y")),
         MV("lat", np.arange(20).repeat(20).reshape(20, 20), dimensions=("y", "x")),
         MV("z", np.outer(np.arange(20), np.ones(20)), dimensions=("y", "x"),),

@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resource.qrc">
+    <normaloff>:/icons/images/geo.svg</normaloff>:/icons/images/geo.svg</iconset>
+  </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::VerticalTabs</set>
   </property>
@@ -38,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -89,7 +93,7 @@
      <item>
       <layout class="QHBoxLayout" name="filter_layout">
        <item>
-        <widget class="QLabel" name="label">
+        <widget class="QLabel" name="label_path">
          <property name="text">
           <string>Files</string>
          </property>
@@ -107,7 +111,7 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QLabel" name="label_2">
+        <widget class="QLabel" name="label_var">
          <property name="text">
           <string>Var</string>
          </property>
@@ -243,7 +247,9 @@
   <tabstop>figures_tree</tabstop>
   <tabstop>figures_tab_dock</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>data_regexp</sender>
@@ -284,8 +290,8 @@
    <slot>update()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>94</x>
-     <y>37</y>
+     <x>-1</x>
+     <y>-1</y>
     </hint>
     <hint type="destinationlabel">
      <x>136</x>

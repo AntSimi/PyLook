@@ -1,27 +1,60 @@
 import os.path
 import re
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui, QtCore
 from ..data import data_store
 
 
+def merged_icons(icons):
+    if len(icons) == 1:
+        return QtGui.QIcon(icons[0])
+    else:
+        pixmaps = list()
+        pixmap = QtGui.QPixmap(len(icons) * 16,16)
+        painter = QtGui.QPainter(pixmap)
+        for i, icon in enumerate(icons):
+            painter.drawPixmap(i * 16, 0, QtGui.QPixmap(icon))
+        painter.end()
+        return QtGui.QIcon(pixmap)
+
+
 class DataTree(QtWidgets.QTreeWidget):
+
     def __init__(self, *args, **kwargs):
         super(DataTree, self).__init__(*args, **kwargs)
         self.data_store = data_store.DataStore()
+        self.geo_icon = ":icons/images/geo.svg"
+        self.depth_icon = ":icons/images/depth.svg"
+        self.time_icon = ":icons/images/time.png"
+        self.setIconSize(QtCore.QSize(48,16))
 
+    def path_leaf(self, dataset):
+        elt = QtWidgets.QTreeWidgetItem()
+        elt.setText(0, dataset.last_name)
+        elt.setToolTip(0, dataset.dirname)
+        elt.setData(0, 1, dataset.key)
+        for variable in dataset:
+            child = QtWidgets.QTreeWidgetItem(elt)
+            child.setText(0, variable.name)
+            icons = list()
+            if variable.geo_coordinates:
+                icons.append(self.geo_icon)
+            if variable.time_coordinates:
+                icons.append(self.time_icon)
+            if variable.depth_coordinates:
+                icons.append(self.depth_icon)
+            if len(icons) > 0:
+                child.setIcon(0, merged_icons(icons))
+        return elt
+    
     def populate(self):
         files_present = [
             self.topLevelItem(i).data(0, 1) for i in range(self.topLevelItemCount())
         ]
         elts = list()
-        for filename in self.data_store.files:
-            if filename in files_present:
+        for dataset in self.data_store:
+            if dataset.key in files_present:
                 continue
-            elt = QtWidgets.QTreeWidgetItem()
-            elt.setText(0, os.path.basename(filename))
-            elt.setToolTip(0, os.path.dirname(filename))
-            elt.setData(0, 1, filename)
-            elts.append(elt)
+            elts.append(self.path_leaf(dataset))
         self.addTopLevelItems(elts)
 
     def update(self, event):
