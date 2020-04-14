@@ -50,13 +50,17 @@ class DataStore:
         def __init__(self):
             self.store = dict()
 
-        def add_file(self, filename):
+        def add_path(self, filename):
             new = NetCDFDataset(filename)
             self.store[new.key] = new
             return new.key
 
-        def add_files(self, filenames):
-            return list(self.add_file(filename) for filename in filenames)
+        def add_dataset(self, dataset):
+            self.store[dataset.key] = dataset
+            return dataset.key
+
+        def add_paths(self, filenames):
+            return list(self.add_path(filename) for filename in filenames)
 
         @property
         def files(self):
@@ -71,15 +75,12 @@ class DataStore:
             return list_filetype
 
         def __str__(self):
-            elts = list()
-            for key, dataset in self.store.items():
-                elts.append(dataset.__str__())
-            return "\n".join(elts)
+            return self.summary(color_bash=True)
 
-        def summary(self, color_bash=False):
+        def summary(self, color_bash=False, full=False):
             elts = list()
             for key, dataset in self.store.items():
-                elts.append(dataset.summary(color_bash))
+                elts.append(dataset.summary(color_bash, full))
             child = "\n".join(elts)
             if color_bash:
                 return f"\033[4;32m{len(elts)} dataset(s)\033[0m\n{child}"
@@ -124,23 +125,26 @@ class BaseDataset:
         self.key = self.genkey()
 
     def __str__(self):
-        children = "\n\t".join(
-            str(self.children[i]).replace("\n", "\n\t") for i in self.children
-        )
-        keys = list(self.attrs.keys())
-        keys.sort()
-        attrs = "\n\t\t".join(f"{key} : {self.attrs[key]}" for key in keys)
-        return f"{self.path}\n\t\t{attrs}\n\t{children}"
+        return summary(True)
 
-    def summary(self, color_bash=False):
+    def summary(self, color_bash=False, full=False):
         children = "\n    ".join(
-            self.children[i].summary(color_bash) for i in self.children
+            self.children[i].summary(color_bash, full).replace("\n", "\n    ")
+            for i in self.children
         )
         header = f"\033[4;34m{self.path}\033[0m" if color_bash else self.path
+        if full and len(self.attrs):
+            keys = list(self.attrs.keys())
+            keys.sort()
+            attrs = "\n        " + "\n        ".join(
+                f"{key} : {self.attrs[key]}" for key in keys
+            )
+        else:
+            attrs = ""
         return f"""{header}
         Time coordinates : {self.coordinates['time']}
         Depth coordinates : {self.coordinates['depth']}
-        Geo coordinates : {self.coordinates['geo']}
+        Geo coordinates : {self.coordinates['geo']}{attrs}
     {children}"""
 
     def open(self):
@@ -185,24 +189,29 @@ class BaseVariable:
         raise Exception("must be define")
 
     def __str__(self):
-        keys = list(self.attrs.keys())
-        keys.sort()
-        attrs = "\n\t".join(f"{key} : {self.attrs[key]}" for key in keys)
-        return f"{self.name}\n\t{attrs}"
+        return summary(True)
 
-    def summary(self, color_bash):
-        if color_bash:
-            return f"{self.name}\033[0;93m{self.dimensions}\033[0m"
+    def summary(self, color_bash=False, full=False):
+        if full and len(self.attrs):
+            keys = list(self.attrs.keys())
+            keys.sort()
+            attrs = "\n    " + "\n    ".join(
+                f"{key} : {self.attrs[key]}" for key in keys
+            )
         else:
-            return f"{self.name}{self.dimensions}"
+            attrs = ""
+        if color_bash:
+            return f"{self.name}\033[0;93m{self.dimensions}\033[0m{attrs}"
+        else:
+            return f"{self.name}{self.dimensions}{attrs}"
 
     @property
     def handler(self):
-        return Exception("must be define")
+        raise Exception("must be define")
 
     @property
     def dimensions(self):
-        return Exception("must be define")
+        raise Exception("must be define")
 
 
 class NetCDFDataset(BaseDataset):
@@ -260,4 +269,44 @@ class NetCDFVariable(BaseVariable):
 
 
 class MemoryDataset(BaseDataset):
-    pass
+    __slots__ = tuple()
+
+    def __init__(self, key, *args, **kwargs):
+        self.key = key
+        self.path = key
+        self.attrs = dict()
+        self.populate(*args, **kwargs)
+        self.find_coordinates_variables()
+
+    def populate(self, *args, **kwargs):
+        if len(args) == 0:
+            self.children = {k: MemoryVariable(k, v, self) for k, v in kwargs.items()}
+        else:
+            self.children = dict()
+            for variable in args:
+                self.children[variable.name] = variable
+                variable.parent = self
+
+
+class MemoryVariable(BaseVariable):
+
+    __slots__ = ("value",)
+
+    def __init__(self, name, value, parent=None, attrs=None):
+        self.name = name
+        self.parent = parent
+        self.value = value
+        self.attrs = dict() if attrs is None else attrs
+
+    @property
+    def dimensions(self):
+        return self.value.shape
+
+
+class ZarrDataset(BaseDataset):
+    __slots__ = tuple()
+
+
+class ZarrVariable(BaseVariable):
+
+    __slots__ = tuple()
