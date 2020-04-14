@@ -125,7 +125,7 @@ class BaseDataset:
         self.key = self.genkey()
 
     def __str__(self):
-        return summary(True)
+        return self.summary(True)
 
     def summary(self, color_bash=False, full=False):
         children = "\n    ".join(
@@ -280,7 +280,7 @@ class MemoryDataset(BaseDataset):
 
     def populate(self, *args, **kwargs):
         if len(args) == 0:
-            self.children = {k: MemoryVariable(k, v, self) for k, v in kwargs.items()}
+            self.children = {k: MemoryVariable(k, v, parent=self) for k, v in kwargs.items()}
         else:
             self.children = dict()
             for variable in args:
@@ -292,15 +292,16 @@ class MemoryVariable(BaseVariable):
 
     __slots__ = ("value",)
 
-    def __init__(self, name, value, parent=None, attrs=None):
+    def __init__(self, name, value, dimensions=None, parent=None, attrs=None):
         self.name = name
         self.parent = parent
         self.value = value
         self.attrs = dict() if attrs is None else attrs
+        self.attrs['__dimensions'] = value.shape if dimensions is None else dimensions
 
     @property
     def dimensions(self):
-        return self.value.shape
+        return self.attrs['__dimensions']
 
 
 class ZarrDataset(BaseDataset):

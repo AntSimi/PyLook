@@ -76,7 +76,4 @@ def dataheader():
     parser.add_argument("--full", action="store_true")
     args = parser.parse_args()
     d = DataStore()
-    if args.full:
-        print(d)
-    else:
-        print(d.summary(color_bash=True))
+    print(d.summary(color_bash=True, full=args.full))

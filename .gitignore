@@ -131,3 +131,5 @@ dmypy.json
 
 # gallery
 doc/source/auto_examples/
+.vscode/settings.json
+files.txt
