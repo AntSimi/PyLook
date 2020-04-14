@@ -56,7 +56,7 @@ class PyLookParser(GenericParser):
     def parse_args(self, *args, **kwargs):
         args = super(GenericParser, self).parse_args(*args, **kwargs)
         d = DataStore()
-        d.add_files(args.filenames)
+        d.add_paths(args.filenames)
         return args
 
 

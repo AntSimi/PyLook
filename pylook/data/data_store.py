@@ -90,7 +90,7 @@ class DataStore:
 
 class BaseDataset:
 
-    CLASSIC_GEO_COORDINATES = set(
+    GEO_COORDINATES = set(
         (
             ("longitude", "latitude"),
             ("lon", "lat"),
@@ -101,12 +101,12 @@ class BaseDataset:
         )
     )
 
-    CLASSIC_GEO_COORDINATES_X = set(i[0] for i in CLASSIC_GEO_COORDINATES)
-    CLASSIC_GEO_COORDINATES_Y = set(i[1] for i in CLASSIC_GEO_COORDINATES)
+    GEO_COORDINATES_X = set(i[0] for i in GEO_COORDINATES)
+    GEO_COORDINATES_Y = set(i[1] for i in GEO_COORDINATES)
 
-    CLASSIC_TIME_COORDINATES = set(("time", "time_ref",))
+    TIME_COORDINATES = set(("time", "time_ref", "t"))
 
-    CLASSIC_DEPTH_COORDINATES = set(("depth",))
+    DEPTH_COORDINATES = set(("depth",))
 
     __slots__ = (
         "path",
@@ -127,6 +127,10 @@ class BaseDataset:
     def __str__(self):
         return self.summary(True)
 
+    @staticmethod
+    def repr_coordinates(values):
+        return {",".join(k): v for k, v in values.items()}
+
     def summary(self, color_bash=False, full=False):
         children = "\n    ".join(
             self.children[i].summary(color_bash, full).replace("\n", "\n    ")
@@ -142,9 +146,9 @@ class BaseDataset:
         else:
             attrs = ""
         return f"""{header}
-        Time coordinates : {self.coordinates['time']}
-        Depth coordinates : {self.coordinates['depth']}
-        Geo coordinates : {self.coordinates['geo']}{attrs}
+        Time coordinates : {self.repr_coordinates(self.coordinates['time'])}
+        Depth coordinates : {self.repr_coordinates(self.coordinates['depth'])}
+        Geo coordinates : {self.repr_coordinates(self.coordinates['geo'])}{attrs}
     {children}"""
 
     def open(self):
@@ -156,6 +160,10 @@ class BaseDataset:
     def genkey(self):
         raise Exception("must be define")
 
+    @property
+    def name(self):
+        return self.path
+    
     def close(self):
         raise Exception("must be define")
 
@@ -163,21 +171,53 @@ class BaseDataset:
     def variables(self):
         return self.children.keys()
 
+    @staticmethod
+    def clean_name(name):
+        return name.lower()
+
+    @staticmethod
+    def sort_dims(dim, key, dims):
+        dim = frozenset(dim)
+        if dim in dims:
+            dims[dim].append(key)
+        else:
+            dims[dim] = [key]
+
+    def format_coordinates(self, coordinates, inverse):
+        format_coordinates = dict()
+        for i in coordinates:
+            if isinstance(i, tuple):
+                x_, y_ = inverse[i[0]], inverse[i[1]]
+                dims_x, dims_y = (
+                    self.children[x_].dimensions,
+                    self.children[y_].dimensions,
+                )
+                self.sort_dims(set(dims_x).union(set(dims_y)) , dict(x=x_, y=y_), format_coordinates)
+            else:
+                i_ = inverse[i]
+                self.sort_dims(self.children[i_].dimensions, i_, format_coordinates)
+        return format_coordinates
+
     def find_coordinates_variables(self):
-        variables = set(i.lower() for i in self.variables)
-        self.coordinates = dict(
-            depth=variables & self.CLASSIC_DEPTH_COORDINATES,
-            time=variables & self.CLASSIC_TIME_COORDINATES,
-            geo=(
-                variables & self.CLASSIC_GEO_COORDINATES_X,
-                variables & self.CLASSIC_GEO_COORDINATES_Y,
-            ),
+        variables = set(self.clean_name(i) for i in self.variables)
+        inverse = {self.clean_name(i): i for i in self.variables}
+        group_x = variables & self.GEO_COORDINATES_X
+        group_y = variables & self.GEO_COORDINATES_Y
+        geo_coordinates = (
+            set((x, y) for x in group_x for y in group_y) & self.GEO_COORDINATES
         )
+        self.coordinates = dict(
+            depth=self.format_coordinates(variables & self.DEPTH_COORDINATES, inverse),
+            time=self.format_coordinates(variables & self.TIME_COORDINATES, inverse),
+            geo=self.format_coordinates(geo_coordinates, inverse),
+        )
+        for child in self.children.values():
+            child.set_coordinates()
 
 
 class BaseVariable:
 
-    __slots__ = ("name", "parent", "attrs")
+    __slots__ = ("name", "parent", "attrs", "coordinates")
 
     def __init__(self, name, parent):
         self.name = name
@@ -189,7 +229,7 @@ class BaseVariable:
         raise Exception("must be define")
 
     def __str__(self):
-        return summary(True)
+        return self.summary(True)
 
     def summary(self, color_bash=False, full=False):
         if full and len(self.attrs):
@@ -200,10 +240,25 @@ class BaseVariable:
             )
         else:
             attrs = ""
+        coordinates = ""
         if color_bash:
-            return f"{self.name}\033[0;93m{self.dimensions}\033[0m{attrs}"
+            if self.time_coordinates:
+                coordinates += f"\033[0;34m t: {self.time_coordinates}"
+            if self.depth_coordinates:
+                coordinates += f"\033[0;35m d: {self.depth_coordinates}"
+            if self.geo_coordinates:
+                coordinates += f"\033[0;32m g: {self.geo_coordinates}"
         else:
-            return f"{self.name}{self.dimensions}{attrs}"
+            if self.time_coordinates:
+                coordinates += f"t: {self.time_coordinates}"
+            if self.depth_coordinates:
+                coordinates += f"d: {self.depth_coordinates}"
+            if self.geo_coordinates:
+                coordinates += f"g: {self.geo_coordinates}"
+        if color_bash:
+            return f"{self.name}\033[0;93m{self.dimensions}{coordinates}\033[0m{attrs}"
+        else:
+            return f"{self.name}{self.dimensions}{coordinates}{attrs}"
 
     @property
     def handler(self):
@@ -212,6 +267,41 @@ class BaseVariable:
     @property
     def dimensions(self):
         raise Exception("must be define")
+
+    def set_coordinates(self):
+        self.coordinates = dict()
+        t_dims = self.parent.coordinates["time"]
+        d_dims = self.parent.coordinates["depth"]
+        g_dims = self.parent.coordinates["geo"]
+        dims = frozenset(self.dimensions)
+        if t_dims:
+            for available_dims, value in t_dims.items():
+                if available_dims.issubset(dims):
+                    self.coordinates["time"] = value
+                    break
+        if d_dims:
+            for available_dims, value in d_dims.items():
+                if available_dims.issubset(dims):
+                    self.coordinates["depth"] = value
+                    break
+        if g_dims:
+            dims = frozenset(self.dimensions)
+            for available_dims, value in g_dims.items():
+                if available_dims.issubset(dims):
+                    self.coordinates["geo"] = value
+                    break
+
+    @property
+    def time_coordinates(self):
+        return self.coordinates.get("time", [None])[0]
+
+    @property
+    def depth_coordinates(self):
+        return self.coordinates.get("depth", [None])[0]
+
+    @property
+    def geo_coordinates(self):
+        return self.coordinates.get("geo", [None])[0]
 
 
 class NetCDFDataset(BaseDataset):
@@ -280,7 +370,9 @@ class MemoryDataset(BaseDataset):
 
     def populate(self, *args, **kwargs):
         if len(args) == 0:
-            self.children = {k: MemoryVariable(k, v, parent=self) for k, v in kwargs.items()}
+            self.children = {
+                k: MemoryVariable(k, v, parent=self) for k, v in kwargs.items()
+            }
         else:
             self.children = dict()
             for variable in args:
@@ -297,11 +389,13 @@ class MemoryVariable(BaseVariable):
         self.parent = parent
         self.value = value
         self.attrs = dict() if attrs is None else attrs
-        self.attrs['__dimensions'] = value.shape if dimensions is None else dimensions
+        self.attrs["__dimensions"] = (
+            set(str(i) for i in value.shape) if dimensions is None else dimensions
+        )
 
     @property
     def dimensions(self):
-        return self.attrs['__dimensions']
+        return self.attrs["__dimensions"]
 
 
 class ZarrDataset(BaseDataset):
