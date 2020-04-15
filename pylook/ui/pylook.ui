@@ -44,7 +44,7 @@
       </property>
       <widget class="QWidget" name="start_tab">
        <attribute name="title">
-        <string>Tab 1</string>
+        <string>Figure 1</string>
        </attribute>
       </widget>
      </widget>
@@ -132,6 +132,9 @@
      </item>
      <item>
       <widget class="DataTree" name="data_tree">
+       <property name="contextMenuPolicy">
+        <enum>Qt::CustomContextMenu</enum>
+       </property>
        <property name="editTriggers">
         <set>QAbstractItemView::NoEditTriggers</set>
        </property>
@@ -169,7 +172,10 @@
        <item>
         <widget class="QLineEdit" name="data_regexp">
          <property name="text">
-          <string>*</string>
+          <string/>
+         </property>
+         <property name="placeholderText">
+          <string>Regexp to apply on dataset</string>
          </property>
         </widget>
        </item>
@@ -188,7 +194,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="var_regexp"/>
+        <widget class="QLineEdit" name="var_regexp">
+         <property name="placeholderText">
+          <string>Regexp to apply on variable</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -325,6 +335,10 @@
    <class>DataTree</class>
    <extends>QTreeWidget</extends>
    <header>.data_tree</header>
+   <slots>
+    <slot>open_files()</slot>
+    <slot>context_menu()</slot>
+   </slots>
   </customwidget>
  </customwidgets>
  <tabstops>
@@ -372,7 +386,7 @@
    <sender>open_files</sender>
    <signal>triggered()</signal>
    <receiver>data_tree</receiver>
-   <slot>update()</slot>
+   <slot>open_files()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -429,6 +443,22 @@
     <hint type="destinationlabel">
      <x>136</x>
      <y>167</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>data_tree</sender>
+   <signal>customContextMenuRequested(QPoint)</signal>
+   <receiver>data_tree</receiver>
+   <slot>context_menu()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>131</x>
+     <y>174</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>131</x>
+     <y>174</y>
     </hint>
    </hints>
   </connection>
