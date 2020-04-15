@@ -53,7 +53,7 @@ class DataStore:
 
         def __init__(self):
             self.store = dict()
-            
+
         def __iter__(self):
             for elt in self.store.values():
                 yield elt
@@ -94,6 +94,25 @@ class DataStore:
                 return f"\033[4;32m{len(elts)} dataset(s)\033[0m\n{child}"
             else:
                 return f"{len(elts)} dataset(s)\n{child}"
+
+        def add_demo_datasets(self):
+            self.add_dataset(
+                MemoryDataset(
+                    "4D_data",
+                    MemoryVariable("lon", numpy.arange(20), ("x",)),
+                    MemoryVariable("lat", numpy.arange(25), ("y",)),
+                    MemoryVariable(
+                        "depth", numpy.arange(15), ("d",), attrs=dict(units="m"),
+                    ),
+                    MemoryVariable(
+                        "time", numpy.arange(10), ("t",), attrs=dict(units="day"),
+                    ),
+                    MemoryVariable(
+                        "z", numpy.ones((10, 15, 20, 25)), ("t", "d", "x", "y")
+                    ),
+                    MemoryVariable("f_depth_time", numpy.ones((10, 15)), ("t", "d")),
+                )
+            )
 
 
 class BaseDataset:
@@ -175,11 +194,11 @@ class BaseDataset:
     @property
     def last_name(self):
         return os.path.basename(self.path)
-    
+
     @property
     def dirname(self):
         return os.path.dirname(self.path)
-    
+
     @property
     def name(self):
         return self.path

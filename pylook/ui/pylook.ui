@@ -22,6 +22,21 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>3</number>
+    </property>
+    <property name="leftMargin">
+     <number>4</number>
+    </property>
+    <property name="topMargin">
+     <number>4</number>
+    </property>
+    <property name="rightMargin">
+     <number>4</number>
+    </property>
+    <property name="bottomMargin">
+     <number>4</number>
+    </property>
     <item>
      <widget class="TabWidget" name="figures_tab_dock">
       <property name="currentIndex">
@@ -69,10 +84,59 @@
    </attribute>
    <widget class="QWidget" name="data_widget">
     <layout class="QVBoxLayout" name="data_layout">
+     <property name="spacing">
+      <number>3</number>
+     </property>
+     <property name="leftMargin">
+      <number>4</number>
+     </property>
+     <property name="topMargin">
+      <number>4</number>
+     </property>
+     <property name="rightMargin">
+      <number>4</number>
+     </property>
+     <property name="bottomMargin">
+      <number>4</number>
+     </property>
+     <item>
+      <layout class="QHBoxLayout" name="checkbox_layout">
+       <property name="spacing">
+        <number>3</number>
+       </property>
+       <item>
+        <widget class="QCheckBox" name="checkbox_time">
+         <property name="text">
+          <string>Time</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkbox_geo">
+         <property name="text">
+          <string>Geo</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkbox_depth">
+         <property name="text">
+          <string>Depth</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
      <item>
       <widget class="DataTree" name="data_tree">
        <property name="editTriggers">
         <set>QAbstractItemView::NoEditTriggers</set>
+       </property>
+       <property name="indentation">
+        <number>10</number>
        </property>
        <property name="sortingEnabled">
         <bool>true</bool>
@@ -92,6 +156,9 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="filter_layout">
+       <property name="spacing">
+        <number>3</number>
+       </property>
        <item>
         <widget class="QLabel" name="label_path">
          <property name="text">
@@ -110,6 +177,9 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>3</number>
+       </property>
        <item>
         <widget class="QLabel" name="label_var">
          <property name="text">
@@ -140,6 +210,21 @@
    </attribute>
    <widget class="QWidget" name="figures_widget">
     <layout class="QVBoxLayout" name="figures_layout">
+     <property name="spacing">
+      <number>3</number>
+     </property>
+     <property name="leftMargin">
+      <number>4</number>
+     </property>
+     <property name="topMargin">
+      <number>4</number>
+     </property>
+     <property name="rightMargin">
+      <number>4</number>
+     </property>
+     <property name="bottomMargin">
+      <number>4</number>
+     </property>
      <item>
       <widget class="FiguresTree" name="figures_tree">
        <property name="autoFillBackground">
@@ -296,6 +381,54 @@
     <hint type="destinationlabel">
      <x>136</x>
      <y>154</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkbox_depth</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>data_tree</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>223</x>
+     <y>59</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>167</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkbox_geo</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>data_tree</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>59</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>167</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkbox_time</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>data_tree</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>50</x>
+     <y>59</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>167</y>
     </hint>
    </hints>
   </connection>

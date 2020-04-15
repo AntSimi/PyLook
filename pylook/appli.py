@@ -52,11 +52,14 @@ class PyLookParser(GenericParser):
         self.standard_argument()
         group = self.add_argument_group("Data")
         group.add_argument("filenames", nargs="*")
+        group.add_argument("--demo_datasets", action="store_true")
 
     def parse_args(self, *args, **kwargs):
         args = super(GenericParser, self).parse_args(*args, **kwargs)
         d = DataStore()
         d.add_paths(args.filenames)
+        if args.demo_datasets:
+            d.add_demo_datasets()
         return args
 
 
