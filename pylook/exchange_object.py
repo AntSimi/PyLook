@@ -1,5 +1,5 @@
 class Base:
-    __slot__ = ("current_value", "init_value", "child")
+    __slot__ = ("current_value", "init_value", "child", "help")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,7 +35,11 @@ class Base:
         self.child.extend(elt)
 
     def __str__(self):
-        return ""
+        return self.summary(full=False, compress=True)
+
+    @property
+    def known_children(self):
+        return []
 
     @classmethod
     def summary_options(cls, options, compress=False):
@@ -45,59 +49,85 @@ class Base:
             keys.sort()
             for k in keys:
                 v = options[k]
-                if isinstance(v, dict):
+                v_dict = isinstance(v, dict)
+                if v_dict:
                     v = cls.summary_options(v, compress).replace("\n", "\n    ")
-                elts.append(f"{k:8} : {v}")
-            out = "\n".join(elts)
+                if compress:
+                    if v_dict:
+                        elts.append(f"\n{k}: {v}\n")
+                    else:
+                        elts.append(f"{k}: {v}")
+                else:
+                    elts.append(f"{k:8}: {v}")
             if compress:
-                out = out.replace('\n', ' | ')
-            return "\n" + out 
+                out = "\n" + " |".join(elts).replace("\n |", "\n").replace("|\n", "\n")
+                return out.replace("\n\n", "\n")
+            else:
+                return "\n" + "\n".join(elts)
         else:
             return ""
 
     def summary(self, color_bash=True, full=True, compress=False):
         summaries = list()
         for child in self:
-            summaries.append(child.summary())
+            summaries.append(child.summary(color_bash, full, compress))
         if len(summaries):
             synthesis = "\n    " + "\n".join(summaries).replace("\n", "\n    ")
         else:
             synthesis = ""
         c = self.BASH_COLOR if color_bash else ""
         c_escape = "\033[0;0m" if color_bash else ""
-        options = self.summary_options(self.options, compress).replace("\n", "\n        ")
+        options = self.summary_options(self.options, compress).replace(
+            "\n", "\n        "
+        )
         return f"{c}{self.__class__.__name__}{c_escape}{options}{synthesis}"
 
+    @property
+    def name(self):
+        raise Exception("must be define")
 
-class FigureSet(Base):
+
+class Data(Base):
     __slot__ = tuple()
-    BASH_COLOR = "\033[0;36m"
+    BASH_COLOR = "\033[0;89m"
+    QT_COLOR = "#D7D7D7"
 
     def __init__(self, *args, **kwargs):
-        self.init_value = dict(
-            coordinates=dict(
-                llcrnrlon="-180",
-                urcnrlon="180",
-                llcrnrlat="-90",
-                urcnrlat="90",
-                projection=["plat_carre", "ortho"],
-            ),
-        )
+        self.init_value = dict()
+        self.help = dict()
         super().__init__(*args, **kwargs)
 
 
-class Figure(Base):
+class Legend(Base):
     __slot__ = tuple()
-    BASH_COLOR = "\033[0;32m"
+    BASH_COLOR = "\033[0;95m"
+    QT_COLOR = "#E769D8"
 
     def __init__(self, *args, **kwargs):
-        self.init_value = dict(figsize="None", title="''", dpi="100")
+        self.init_value = dict()
+        self.help = dict()
         super().__init__(*args, **kwargs)
+
+
+class Method(Base):
+    __slot__ = tuple()
+    BASH_COLOR = "\033[0;90m"
+    QT_COLOR = "#707070"
+
+    def __init__(self, *args, **kwargs):
+        self.init_value = dict()
+        self.help = dict()
+        super().__init__(*args, **kwargs)
+
+    @property
+    def known_children(self):
+        return [Data, Legend]
 
 
 class Subplot(Base):
     __slot__ = tuple()
     BASH_COLOR = "\033[0;93m"
+    QT_COLOR = "#EDE400"
 
     def __init__(self, *args, **kwargs):
         self.init_value = dict(
@@ -108,31 +138,63 @@ class Subplot(Base):
             zorder="0",
             title="''",
         )
+        self.help = dict(
+            position=dict(
+                doc="Axes specification must be a tuple of 3 values (nb_x, nb_y, i) or a list of 4 values [x0, y0, dx, dy] which are a fraction of figures."
+            )
+        )
         super().__init__(*args, **kwargs)
 
+    @property
+    def known_children(self):
+        return [Method]
 
-class Method(Base):
+    @property
+    def name(self):
+        return 'Subplot'
+
+
+class Figure(Base):
     __slot__ = tuple()
-    BASH_COLOR = "\033[0;90m"
+    BASH_COLOR = "\033[0;32m"
+    QT_COLOR = "#00B31B"
 
     def __init__(self, *args, **kwargs):
-        self.init_value = dict()
+        self.init_value = dict(figsize="None", title="''", dpi="100")
+        self.help = dict()
         super().__init__(*args, **kwargs)
 
+    @property
+    def known_children(self):
+        return [Subplot]
 
-class Data(Base):
+    @property
+    def name(self):
+        return 'Figure'
+
+
+class FigureSet(Base):
     __slot__ = tuple()
-    BASH_COLOR = "\033[0;89m"
+    BASH_COLOR = "\033[0;36m"
+    QT_COLOR = "#00A3B3"
 
     def __init__(self, *args, **kwargs):
-        self.init_value = dict()
+        self.init_value = dict(
+            coordinates=dict(
+                llcrnrlon="-180",
+                urcrnrlon="180",
+                llcrnrlat="-90",
+                urcrnrlat="90",
+                projection=["'plat_carre'", "'ortho'"],
+            ),
+        )
+        self.help = dict()
         super().__init__(*args, **kwargs)
 
+    @property
+    def known_children(self):
+        return [Figure]
 
-class Legend(Base):
-    __slot__ = tuple()
-    BASH_COLOR = "\033[0;95m"
-
-    def __init__(self, *args, **kwargs):
-        self.init_value = dict()
-        super().__init__(*args, **kwargs)
+    @property
+    def name(self):
+        return 'Figure set'

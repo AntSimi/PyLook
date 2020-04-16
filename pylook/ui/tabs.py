@@ -39,3 +39,6 @@ class TabWidget(QtWidgets.QTabWidget):
         widget_from_tab.show()
         window.show()
         window.move(QtGui.QCursor.pos())
+
+    def update_figures(self, figure_set):
+        print(figure_set[0])

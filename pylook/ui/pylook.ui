@@ -237,6 +237,9 @@
      </property>
      <item>
       <widget class="FiguresTree" name="figures_tree">
+       <property name="contextMenuPolicy">
+        <enum>Qt::CustomContextMenu</enum>
+       </property>
        <property name="autoFillBackground">
         <bool>false</bool>
        </property>
@@ -250,7 +253,7 @@
         <number>10</number>
        </property>
        <property name="sortingEnabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="allColumnsShowFocus">
         <bool>false</bool>
@@ -258,6 +261,9 @@
        <property name="wordWrap">
         <bool>true</bool>
        </property>
+       <attribute name="headerShowSortIndicator" stdset="0">
+        <bool>false</bool>
+       </attribute>
        <column>
         <property name="text">
          <string notr="true">key</string>
@@ -268,46 +274,6 @@
          <string>value</string>
         </property>
        </column>
-       <item>
-        <property name="text">
-         <string>All</string>
-        </property>
-        <item>
-         <property name="text">
-          <string>urcrnrlon</string>
-         </property>
-         <property name="text">
-          <string>180</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>urcrnlat</string>
-         </property>
-         <property name="text">
-          <string>90</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>llcrnrlon</string>
-         </property>
-         <property name="text">
-          <string>-180</string>
-         </property>
-         <property name="flags">
-          <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>llcrnrlat</string>
-         </property>
-         <property name="text">
-          <string>-90</string>
-         </property>
-        </item>
-       </item>
       </widget>
      </item>
     </layout>
@@ -325,11 +291,20 @@
    <extends>QTabWidget</extends>
    <header>.tabs</header>
    <container>1</container>
+   <slots>
+    <slot>update_figures()</slot>
+   </slots>
   </customwidget>
   <customwidget>
    <class>FiguresTree</class>
    <extends>QTreeWidget</extends>
    <header>.figures_tree</header>
+   <slots>
+    <signal>update_figures()</signal>
+    <slot>context_menu()</slot>
+    <slot>edit_item()</slot>
+    <slot>item_changed()</slot>
+   </slots>
   </customwidget>
   <customwidget>
    <class>DataTree</class>
@@ -459,6 +434,70 @@
     <hint type="destinationlabel">
      <x>131</x>
      <y>174</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>figures_tree</sender>
+   <signal>customContextMenuRequested(QPoint)</signal>
+   <receiver>figures_tree</receiver>
+   <slot>context_menu()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>131</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>131</x>
+     <y>471</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>figures_tree</sender>
+   <signal>itemChanged(QTreeWidgetItem*,int)</signal>
+   <receiver>figures_tree</receiver>
+   <slot>item_changed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>131</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>131</x>
+     <y>471</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>figures_tree</sender>
+   <signal>itemDoubleClicked(QTreeWidgetItem*,int)</signal>
+   <receiver>figures_tree</receiver>
+   <slot>edit_item()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>131</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>131</x>
+     <y>471</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>figures_tree</sender>
+   <signal>update_figures()</signal>
+   <receiver>figures_tab_dock</receiver>
+   <slot>update_figures()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>131</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>534</x>
+     <y>298</y>
     </hint>
    </hints>
   </connection>

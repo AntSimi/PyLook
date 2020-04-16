@@ -38,8 +38,8 @@ class DataTree(QtWidgets.QTreeWidget):
     def path_leaf(self, dataset):
         leaf = QtWidgets.QTreeWidgetItem()
         leaf.setText(0, dataset.last_name)
-        leaf.setToolTip(0, dataset.dirname)
-        leaf.setData(0, 3, dataset.key)
+        leaf.setToolTip(0, dataset.summary(child=False, full=True))
+        leaf.setData(0, 4, dataset.key)
         leaf.setIcon(0, QtGui.QIcon())
         for variable in dataset:
             self.variable_leaf(leaf, variable)
@@ -49,22 +49,23 @@ class DataTree(QtWidgets.QTreeWidget):
     def variable_leaf(cls, parent, variable):
         leaf = QtWidgets.QTreeWidgetItem(parent)
         leaf.setText(0, variable.name)
+        leaf.setToolTip(0, variable.summary(full=True))
         icons = list()
         if variable.geo_coordinates:
             icons.append(cls.GEO_ICON)
-            leaf.setData(0, 3, True)
+            leaf.setData(0, 4, True)
         if variable.time_coordinates:
             icons.append(cls.TIME_ICON)
-            leaf.setData(0, 4, True)
+            leaf.setData(0, 5, True)
         if variable.depth_coordinates:
             icons.append(cls.DEPTH_ICON)
-            leaf.setData(0, 5, True)
+            leaf.setData(0, 6, True)
         if len(icons) > 0:
             leaf.setIcon(0, merged_icons(icons))
 
     def populate(self):
         files_present = [
-            self.topLevelItem(i).data(0, 3) for i in range(self.topLevelItemCount())
+            self.topLevelItem(i).data(0, 4) for i in range(self.topLevelItemCount())
         ]
         elts = list()
         for dataset in self.data_store:
@@ -84,9 +85,9 @@ class DataTree(QtWidgets.QTreeWidget):
                 var_leaf = path_leaf.child(j)
                 var_name, is_geo, is_time, is_depth = (
                     var_leaf.data(0, 0),
-                    var_leaf.data(0, 3),
                     var_leaf.data(0, 4),
                     var_leaf.data(0, 5),
+                    var_leaf.data(0, 6),
                 )
                 var_match = True
                 if self.states["var_regexp"]:
@@ -105,7 +106,7 @@ class DataTree(QtWidgets.QTreeWidget):
             file_match = True
             if self.states["data_regexp"]:
                 file_match = (
-                    self.states["data_regexp"](path_leaf.data(0, 3)) is not None
+                    self.states["data_regexp"](path_leaf.data(0, 4)) is not None
                 )
             path_leaf.setHidden(child_hiden == nb_child or not file_match)
 

@@ -12,23 +12,18 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
-        self.add_figure(self.start_tab)
-        self.figures_tree.expandAll()
+        self.figures_tree.tree_to_figures()
 
-    @staticmethod
-    def add_figure(tab):
-        f = mfigure.Figure()
+
+        # f = mfigure.Figure()
         # ax = f.add_axes([0,0,1,1], projection='plat_carre', coast=True)
-        ax = f.add_subplot(
-            111, projection="plat_carre", coast=True, maximize_screen=True
-        )
-        ax.grid(True)
-        f.canvas = FigureCanvasQTAgg(f)
-        f.toolbar = NavigationToolbar2QT(f.canvas, tab)
-        vbox = PyQt5.QtWidgets.QVBoxLayout()
-        vbox.addWidget(f.canvas)
-        vbox.addWidget(f.toolbar)
-        tab.setLayout(vbox)
+        # ax.grid(True)
+        # f.canvas = FigureCanvasQTAgg(f)
+        # f.toolbar = NavigationToolbar2QT(f.canvas, tab)
+        # vbox = PyQt5.QtWidgets.QVBoxLayout()
+        # vbox.addWidget(f.canvas)
+        # vbox.addWidget(f.toolbar)
+        # tab.setLayout(vbox)
 
 
 class GenericParser(argparse.ArgumentParser):

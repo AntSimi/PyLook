@@ -90,11 +90,10 @@ class DataStore:
             for key, dataset in self.store.items():
                 elts.append(dataset.summary(color_bash, full))
             child = "\n".join(elts)
-            if color_bash:
-                return f"\033[4;32m{len(elts)} dataset(s)\033[0m\n{child}"
-            else:
-                return f"{len(elts)} dataset(s)\n{child}"
-
+            c = "\033[4;32m" if color_bash else ""
+            c_escape = "\033[0;0m" if color_bash else ""
+            return f"{c}{len(elts)} dataset(s){c_escape}\n{child}"
+            
         def add_demo_datasets(self):
             self.add_dataset(
                 MemoryDataset(
@@ -162,11 +161,14 @@ class BaseDataset:
     def repr_coordinates(values):
         return {",".join(k): v for k, v in values.items()}
 
-    def summary(self, color_bash=False, full=False):
-        children = "\n    ".join(
-            self.children[i].summary(color_bash, full).replace("\n", "\n    ")
-            for i in self.children
-        )
+    def summary(self, color_bash=False, full=False, child=True):
+        if child:
+            children = "\n    " + "\n    ".join(
+                self.children[i].summary(color_bash, full).replace("\n", "\n    ")
+                for i in self.children
+            )
+        else:
+            children= ""
         header = f"\033[4;34m{self.path}\033[0m" if color_bash else self.path
         if full and len(self.attrs):
             keys = list(self.attrs.keys())
@@ -179,8 +181,7 @@ class BaseDataset:
         return f"""{header}
         Time coordinates : {self.repr_coordinates(self.coordinates['time'])}
         Depth coordinates : {self.repr_coordinates(self.coordinates['depth'])}
-        Geo coordinates : {self.repr_coordinates(self.coordinates['geo'])}{attrs}
-    {children}"""
+        Geo coordinates : {self.repr_coordinates(self.coordinates['geo'])}{attrs}{children}"""
 
     def open(self):
         raise Exception("must be define")
@@ -282,24 +283,18 @@ class BaseVariable:
         else:
             attrs = ""
         coordinates = ""
-        if color_bash:
-            if self.time_coordinates:
-                coordinates += f"\033[0;34m t: {self.time_coordinates}"
-            if self.depth_coordinates:
-                coordinates += f"\033[0;35m d: {self.depth_coordinates}"
-            if self.geo_coordinates:
-                coordinates += f"\033[0;32m g: {self.geo_coordinates}"
-        else:
-            if self.time_coordinates:
-                coordinates += f"t: {self.time_coordinates}"
-            if self.depth_coordinates:
-                coordinates += f"d: {self.depth_coordinates}"
-            if self.geo_coordinates:
-                coordinates += f"g: {self.geo_coordinates}"
-        if color_bash:
-            return f"{self.name}\033[0;93m{self.dimensions}{coordinates}\033[0m{attrs}"
-        else:
-            return f"{self.name}{self.dimensions}{coordinates}{attrs}"
+        c_dim = "\033[0;93m" if color_bash else ""
+        c_time = "\033[0;34m" if color_bash else ""
+        c_depth = "\033[0;35m" if color_bash else ""
+        c_geo = "\033[0;32m" if color_bash else ""
+        c_escape = "\033[0;0m" if color_bash else ""
+        if self.time_coordinates:
+            coordinates += f"{c_time} t: {self.time_coordinates}"
+        if self.depth_coordinates:
+            coordinates += f"{c_depth} d: {self.depth_coordinates}"
+        if self.geo_coordinates:
+            coordinates += f"{c_geo} g: {self.geo_coordinates}"
+        return f"{self.name}{c_dim}{self.dimensions}{coordinates}{c_escape}{attrs}"
 
     @property
     def handler(self):
