@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets, QtGui
 
 class TabWidget(QtWidgets.QTabWidget):
     def __init__(self, parent=None, *args, **kwargs):
-        super(TabWidget, self).__init__(parent=None, *args, **kwargs)
+        super().__init__(parent=None, *args, **kwargs)
         self.parent = parent
         self.tabBarDoubleClicked.connect(self.onTabBarClicked)
 

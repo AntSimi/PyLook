@@ -85,7 +85,7 @@ class CoastFile(GSHHSFile):
     # byte Embedded_ANT_flag(Dimension_of_segment_arrays) ;
 
     def load(self, filename):
-        super(CoastFile, self).load(filename)
+        super().load(filename)
         with netCDF4.Dataset(filename) as h:
             h.set_auto_maskandscale(False)
             seg_info = h.variables[self.SEG_INFO][:]
@@ -126,7 +126,7 @@ class BorderRiverFile(GSHHSFile):
     SEG_INFO = "N_points_for_a_segment"
 
     def load(self, filename):
-        super(BorderRiverFile, self).load(filename)
+        super().load(filename)
         with netCDF4.Dataset(filename) as h:
             h.set_auto_maskandscale(False)
             self.nb_pt_seg = h.variables[self.SEG_INFO][:]

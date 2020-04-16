@@ -19,7 +19,7 @@ class MapAxes(PyLookAxes):
         self._coast_object = dict()
         self.coast_mappable = None
         self.coast_flag = kwargs.pop("coast", True)
-        super(MapAxes, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.set_env()
 
     @property
@@ -72,7 +72,7 @@ class MapAxes(PyLookAxes):
         pass
 
     def end_pan(self, *args, **kwargs):
-        super(MapAxes, self).end_pan(*args, **kwargs)
+        super().end_pan(*args, **kwargs)
         self.update_env()
 
 
@@ -86,7 +86,7 @@ class PlatCarreAxes(MapAxes):
         llcrnrlat = kwargs.pop("llcrnrlat", -180)
         urcrnrlat = kwargs.pop("urcrnrlat", 180)
         self.maximize_screen = kwargs.pop("maximize_screen", False)
-        super(PlatCarreAxes, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.set_aspect("equal")
         self.set_xlim(llcrnrlon, urcrnrlon)
         self.set_ylim(llcrnrlat, urcrnrlat)
@@ -102,7 +102,7 @@ class PlatCarreAxes(MapAxes):
         else:
             y0, y1 = bounds
         y0, y1 = max(y0, -90), min(y1, 90)
-        super(PlatCarreAxes, self).set_ylim(y0, y1)
+        super().set_ylim(y0, y1)
 
 
 class ProjTransform(mtransforms.Transform):
@@ -118,7 +118,7 @@ class ProjTransform(mtransforms.Transform):
         )
         self.invalid = self.proj(numpy.nan, numpy.nan, inverse=inverted)[0]
         self.flag_inverted = inverted
-        super(ProjTransform, self).__init__(self)
+        super().__init__(self)
 
     def transform_non_affine(self, vertices):
         return reduce_array(
@@ -196,7 +196,7 @@ class TransformAxes(MapAxes):
         self._update_transScale()
 
     def cla(self):
-        super(TransformAxes, self).cla()
+        super().cla()
         self.yaxis.set_major_formatter(mticker.NullFormatter())
         self.xaxis.set_major_formatter(mticker.NullFormatter())
         self.set_longitude_grid(15)
@@ -326,7 +326,7 @@ class OrthoAxes(TransformAxes):
         self.lat0 = kwargs.pop("lat0", 50)
         self.ellps = "sphere"
         self._longitude_cap = 80
-        super(OrthoAxes, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.set_aspect("equal")
         self.update_env()
 

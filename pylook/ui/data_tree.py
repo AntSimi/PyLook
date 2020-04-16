@@ -24,7 +24,7 @@ class DataTree(QtWidgets.QTreeWidget):
     TIME_ICON = ":icons/images/time.png"
 
     def __init__(self, *args, **kwargs):
-        super(DataTree, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.data_store = data_store.DataStore()
         self.setIconSize(QtCore.QSize(48, 16))
         self.states = dict(

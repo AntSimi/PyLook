@@ -10,7 +10,7 @@ from .data.data_store import DataStore
 
 class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
-        super(MainWindow, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.setupUi(self)
         self.add_figure(self.start_tab)
         self.figures_tree.expandAll()
@@ -42,20 +42,20 @@ class GenericParser(argparse.ArgumentParser):
         )
 
     def parse_args(self, *args, **kwargs):
-        args = super(GenericParser, self).parse_args(*args, **kwargs)
+        args = super().parse_args(*args, **kwargs)
         return args
 
 
 class PyLookParser(GenericParser):
     def __init__(self, *args, **kwargs):
-        super(PyLookParser, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.standard_argument()
         group = self.add_argument_group("Data")
         group.add_argument("filenames", nargs="*")
         group.add_argument("--demo_datasets", action="store_true")
 
     def parse_args(self, *args, **kwargs):
-        args = super(GenericParser, self).parse_args(*args, **kwargs)
+        args = super().parse_args(*args, **kwargs)
         d = DataStore()
         d.add_paths(args.filenames)
         if args.demo_datasets:
