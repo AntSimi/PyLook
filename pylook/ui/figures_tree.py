@@ -74,6 +74,11 @@ class FiguresTree(QtWidgets.QTreeWidget):
             return False
         current_value = leaf.text(j)
         previous = leaf.data(0, self.INDEX_PREVIOUS)
+        if leaf.flags() & QtCore.Qt.ItemIsUserCheckable:
+            print(leaf.checkState(1))
+        #     current_value = str(leaf.checkState(1) != 0)
+        #     leaf.setData(0, self.INDEX_PREVIOUS, current_value)
+        #     leaf.setText(j, str(leaf.checkState(1) != 0))
         if previous == current_value:
             return False
         try:
@@ -134,7 +139,17 @@ class FiguresTree(QtWidgets.QTreeWidget):
                 leaf_.setFlags(leaf_.flags() | QtCore.Qt.ItemIsTristate)
                 init_value = init_options[k]
                 if isinstance(init_value, list):
-                    self.setItemWidget(leaf_, 1, ComboBoxItem(self, leaf_, init_value))
+                    if init_value == BaseObject.BOOLEEN:
+                        leaf_.setFlags(
+                            QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
+                        )
+                        leaf_.setCheckState(
+                            1, QtCore.Qt.Checked if eval(v) else QtCore.Qt.Unchecked
+                        )
+                    else:
+                        self.setItemWidget(
+                            leaf_, 1, ComboBoxItem(self, leaf_, init_value)
+                        )
 
     def add_leaf_from_exchange_object(self, parent, model):
         leaf = QtWidgets.QTreeWidgetItem(parent)

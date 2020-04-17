@@ -13,6 +13,7 @@ class Base:
     )
 
     COLOR = ["'None'", "'r'", "'b'"]
+    BOOLEEN = ["True", "False"]
 
     def __init__(self):
         super().__init__()
@@ -128,9 +129,12 @@ class Base:
     def build(self, *args, **kwargs):
         raise Exception("must be define")
 
-    def build_child(self, parent):
-        parent.child_id = dict()
+    def build_child(self, parent, ids=None):
+        if not hasattr(parent, "child_id"):
+            parent.child_id = dict()
         for item in self:
+            if ids is not None and item.id not in ids:
+                continue
             child = item.build(parent)
             parent.child_id[child.id] = child
 
@@ -152,6 +156,8 @@ class Base:
                     set_func(new_value)
         if recursive:
             for child in self:
+                if child.id not in item.child_id:
+                    self.build_child(item, [child.id])
                 child.update(item.child_id[child.id], recursive=recursive)
 
 
@@ -202,7 +208,7 @@ class Subplot(Base):
             position="111",
             ylabel="''",
             xlabel="''",
-            grid="True",
+            grid=self.BOOLEEN,
             zorder="0",
             title="''",
         )
@@ -235,7 +241,7 @@ class Figure(Base):
 
     def __init__(self, *args, **kwargs):
         self.init_value = dict(
-            facecolor=self.COLOR, figsize="None", title="''", dpi="100"
+            facecolor=self.COLOR, figsize="None", suptitle="''", dpi="100"
         )
         self.help = dict()
         super().__init__(*args, **kwargs)

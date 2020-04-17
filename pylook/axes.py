@@ -11,7 +11,11 @@ from . import coast
 
 
 class PyLookAxes(matplotlib.axes.Axes):
-    pass
+    def set_grid(self, state):
+        return self.grid(state)
+
+    def get_grid(self):
+        return self.xaxis._gridOnMajor
 
 
 class MapAxes(PyLookAxes):
