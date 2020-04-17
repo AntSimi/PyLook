@@ -24,9 +24,6 @@ class Ui_MainWindow(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.figures_tab_dock = TabWidget(self.centralwidget)
         self.figures_tab_dock.setObjectName("figures_tab_dock")
-        self.start_tab = QtWidgets.QWidget()
-        self.start_tab.setObjectName("start_tab")
-        self.figures_tab_dock.addTab(self.start_tab, "")
         self.verticalLayout.addWidget(self.figures_tab_dock)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -124,7 +121,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.figures_tab_dock.setCurrentIndex(0)
+        self.figures_tab_dock.setCurrentIndex(-1)
         self.data_regexp.textChanged['QString'].connect(self.data_tree.update)
         self.var_regexp.textChanged['QString'].connect(self.data_tree.update)
         self.open_files.triggered.connect(self.data_tree.open_files)
@@ -143,7 +140,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.figures_tab_dock.setTabText(self.figures_tab_dock.indexOf(self.start_tab), _translate("MainWindow", "Figure 1"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.data_dock.setWindowTitle(_translate("MainWindow", "Data Store"))
         self.checkbox_time.setText(_translate("MainWindow", "Time"))

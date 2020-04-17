@@ -93,7 +93,7 @@ class DataStore:
             c = "\033[4;32m" if color_bash else ""
             c_escape = "\033[0;0m" if color_bash else ""
             return f"{c}{len(elts)} dataset(s){c_escape}\n{child}"
-            
+
         def add_demo_datasets(self):
             self.add_dataset(
                 MemoryDataset(
@@ -168,7 +168,7 @@ class BaseDataset:
                 for i in self.children
             )
         else:
-            children= ""
+            children = ""
         header = f"\033[4;34m{self.path}\033[0m" if color_bash else self.path
         if full and len(self.attrs):
             keys = list(self.attrs.keys())
@@ -183,13 +183,13 @@ class BaseDataset:
         Depth coordinates : {self.repr_coordinates(self.coordinates['depth'])}
         Geo coordinates : {self.repr_coordinates(self.coordinates['geo'])}{attrs}{children}"""
 
-    def open(self):
+    def open(self, *args, **kwargs):
         raise Exception("must be define")
 
-    def populate(self):
+    def populate(self, *args, **kwargs):
         raise Exception("must be define")
 
-    def genkey(self):
+    def genkey(self, *args, **kwargs):
         raise Exception("must be define")
 
     @property
@@ -204,7 +204,7 @@ class BaseDataset:
     def name(self):
         return self.path
 
-    def close(self):
+    def close(self, *args, **kwargs):
         raise Exception("must be define")
 
     @property
@@ -267,7 +267,7 @@ class BaseVariable:
         self.attrs = None
         self.populate()
 
-    def populate(self):
+    def populate(self, *args, **kwargs):
         raise Exception("must be define")
 
     def __str__(self):

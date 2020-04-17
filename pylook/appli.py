@@ -1,9 +1,9 @@
 import argparse
 import PyQt5.QtWidgets
 import sys
+
+# FIXME if remove problem with signal ?
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
-import matplotlib.figure as mfigure
 from .ui.pylook import Ui_MainWindow
 from .data.data_store import DataStore
 
@@ -13,17 +13,6 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
         self.figures_tree.tree_to_figures()
-
-
-        # f = mfigure.Figure()
-        # ax = f.add_axes([0,0,1,1], projection='plat_carre', coast=True)
-        # ax.grid(True)
-        # f.canvas = FigureCanvasQTAgg(f)
-        # f.toolbar = NavigationToolbar2QT(f.canvas, tab)
-        # vbox = PyQt5.QtWidgets.QVBoxLayout()
-        # vbox.addWidget(f.canvas)
-        # vbox.addWidget(f.toolbar)
-        # tab.setLayout(vbox)
 
 
 class GenericParser(argparse.ArgumentParser):

@@ -30,13 +30,34 @@ class FiguresTree(QtWidgets.QTreeWidget):
         self.init_tree()
 
     @classmethod
-    def get_exchange_object(cls, leaf):
+    def get_exchange_object(cls, leaf, with_key=False):
         data = leaf.data(0, 4)
-        name = leaf.text(0)
-        if data:
-            return data
+        if with_key:
+            name = leaf.text(0)
+            if isinstance(data, BaseObject):
+                return data, [name]
+            else:
+                data, names = cls.get_exchange_object(leaf.parent(), with_key=with_key)
+                names.append(name)
+                return data, names
         else:
-            return cls.get_exchange_object(leaf.parent()), name
+            return (
+                data
+                if isinstance(data, BaseObject)
+                else cls.get_exchange_object(leaf.parent())
+            )
+
+    @classmethod
+    def set_exchange_object(cls, leaf, value):
+        e_object, keys = cls.get_exchange_object(leaf, with_key=True)
+        cls.set_option_dict(e_object.options, keys[keys.index("options") + 1 :], value)
+
+    @classmethod
+    def set_option_dict(cls, options, keys, value):
+        if len(keys) == 1:
+            options[keys[0]] = value
+        else:
+            cls.set_option_dict(options[keys[0]], keys[1:], value)
 
     def edit_item(self, leaf, j):
         if j != 1:
@@ -61,14 +82,16 @@ class FiguresTree(QtWidgets.QTreeWidget):
             leaf.setText(j, previous)
             # FIXME : Case combobox not well manage
             return False
+        self.set_exchange_object(leaf, current_value)
+        self.tree_to_figures()
 
     def context_menu(self, event):
         leaf = self.itemAt(event)
         menu = QtWidgets.QMenu(self)
-        menu.addSeparator()
         menu.addAction("Add Figures Set", self.add_figures_set)
-        if leaf and leaf.data(0, 4):
-            e_object = leaf.data(0, 4)
+        menu.addAction("test", self.tree_to_figures)
+        if leaf:
+            e_object = self.get_exchange_object(leaf)
             menu.addSeparator()
             for child in e_object.known_children:
                 action = menu.addAction(f"Add {child.__name__}", self.add_child)
@@ -88,7 +111,12 @@ class FiguresTree(QtWidgets.QTreeWidget):
     def init_tree(self):
         leaf = self.add_figures_set()
         leaf = self.add_child(leaf, Figure)
-        return self.add_child(leaf, Subplot)
+        leaf = self.add_child(leaf, Subplot)
+        # self.set_options(leaf, dict(title="'Mon premier titre'", xlabel="'Longitude'"))
+        return leaf
+
+    def set_options(self, leaf, options):
+        pass
 
     def add_options_to_a_leaf(self, leaf, options, init_options):
         keys = list(options.keys())
@@ -128,6 +156,7 @@ class FiguresTree(QtWidgets.QTreeWidget):
             child_leaf = leaf.child(i) if leaf else self.topLevelItem(i)
             data = child_leaf.data(0, 4)
             if isinstance(data, BaseObject):
+                data = data.copy()
                 data.appends(*self.get_objects(child_leaf))
                 out.append(data)
         return out

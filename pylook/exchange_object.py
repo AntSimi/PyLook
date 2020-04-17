@@ -1,10 +1,38 @@
-class Base:
-    __slot__ = ("current_value", "init_value", "child", "help")
+from copy import deepcopy
+import uuid
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+class Base:
+    __slot__ = (
+        "current_value",
+        "init_value",
+        "child",
+        "help",
+        "id",
+        "building_options",
+    )
+
+    COLOR = ["'None'", "'r'", "'b'"]
+
+    def __init__(self):
+        super().__init__()
         self.child = list()
         self.start_current_value()
+        self.id = uuid.uuid1().int
+        self.building_options = tuple()
+
+    def __new__(cls):
+        return super().__new__(cls)
+
+    def copy(self):
+        new = self.__new__(self.__class__)
+        new.child = [child.copy() for child in self.child]
+        new.init_value = deepcopy(self.init_value)
+        new.current_value = deepcopy(self.current_value)
+        new.help = self.help
+        new.id = self.id
+        new.building_options = self.building_options
+        return new
 
     def start_current_value(self):
         self.current_value = self.copy_options(self.init_value)
@@ -19,6 +47,16 @@ class Base:
                 v = cls.copy_options(v)
             new_options[k] = v
         return new_options
+
+    @property
+    def options_names(self):
+        return list(self.current_value.keys())
+
+    def get_options(self, name, evaluate=True):
+        if evaluate:
+            return eval(self.current_value[name])
+        else:
+            return self.current_value[name]
 
     @property
     def options(self):
@@ -80,11 +118,41 @@ class Base:
         options = self.summary_options(self.options, compress).replace(
             "\n", "\n        "
         )
-        return f"{c}{self.__class__.__name__}{c_escape}{options}{synthesis}"
+        sup = f" ({self.id})" if full else ""
+        return f"{c}{self.__class__.__name__}{sup}{c_escape}{options}{synthesis}"
 
     @property
     def name(self):
         raise Exception("must be define")
+
+    def build(self, *args, **kwargs):
+        raise Exception("must be define")
+
+    def build_child(self, parent):
+        parent.child_id = dict()
+        for item in self:
+            child = item.build(parent)
+            parent.child_id[child.id] = child
+
+    def update(self, item, recursive=True):
+        for k, v in self.options.items():
+            set_func = getattr(item, f"set_{k}", None)
+            get_func = getattr(item, f"get_{k}", None)
+            if k in self.building_options:
+                print(f"{self.__class__.__name__} : only for building : {k}")
+                continue
+            elif set_func is None or get_func is None:
+                print(
+                    f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist {k}"
+                )
+                continue
+            else:
+                new_value = eval(v)
+                if get_func() != new_value:
+                    set_func(new_value)
+        if recursive:
+            for child in self:
+                child.update(item.child_id[child.id], recursive=recursive)
 
 
 class Data(Base):
@@ -144,6 +212,7 @@ class Subplot(Base):
             )
         )
         super().__init__(*args, **kwargs)
+        self.building_options = ("position",)
 
     @property
     def known_children(self):
@@ -151,7 +220,12 @@ class Subplot(Base):
 
     @property
     def name(self):
-        return 'Subplot'
+        return "Subplot"
+
+    def build(self, figure):
+        ax = figure.add_subplot(self.get_options("position"), projection="plat_carre")
+        ax.id = self.id
+        return ax
 
 
 class Figure(Base):
@@ -160,7 +234,9 @@ class Figure(Base):
     QT_COLOR = "#00B31B"
 
     def __init__(self, *args, **kwargs):
-        self.init_value = dict(figsize="None", title="''", dpi="100")
+        self.init_value = dict(
+            facecolor=self.COLOR, figsize="None", title="''", dpi="100"
+        )
         self.help = dict()
         super().__init__(*args, **kwargs)
 
@@ -170,7 +246,7 @@ class Figure(Base):
 
     @property
     def name(self):
-        return 'Figure'
+        return "Figure"
 
 
 class FigureSet(Base):
@@ -197,4 +273,4 @@ class FigureSet(Base):
 
     @property
     def name(self):
-        return 'Figure set'
+        return "Figure set"

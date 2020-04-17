@@ -40,13 +40,8 @@
     <item>
      <widget class="TabWidget" name="figures_tab_dock">
       <property name="currentIndex">
-       <number>0</number>
+       <number>-1</number>
       </property>
-      <widget class="QWidget" name="start_tab">
-       <attribute name="title">
-        <string>Figure 1</string>
-       </attribute>
-      </widget>
      </widget>
     </item>
    </layout>
