@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
-from ..exchange_object import FigureSet, Figure, Subplot, Base as BaseObject
+from ..exchange_object import FigureSet, Figure, Subplot, Base as BaseObject, Bool, Choices
 
 
 class ComboBoxItem(QtWidgets.QComboBox):
@@ -140,8 +140,8 @@ class FiguresTree(QtWidgets.QTreeWidget):
                 leaf_.setData(0, self.INDEX_PREVIOUS, v)
                 leaf_.setFlags(QtCore.Qt.ItemIsTristate| QtCore.Qt.ItemIsEnabled)
                 init_value = init_options[k]
-                if isinstance(init_value, list):
-                    if init_value == BaseObject.BOOL:
+                if isinstance(init_value, Choices):
+                    if isinstance(init_value, Bool):
                         leaf_.setFlags(
                             QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
                         )

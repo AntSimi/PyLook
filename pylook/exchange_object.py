@@ -2,6 +2,20 @@ from copy import deepcopy
 import uuid
 
 
+class Choices(list):
+    def __init__(self, *choices, default=None):
+        super().__init__(choices)
+        self.default = self[0] if default is None else default
+
+class Bool(Choices):
+    def __init__(self):
+        super().__init__('True', 'False')
+
+class FBool(Bool):
+    def __init__(self):
+        super().__init__()
+        self.default = self[1]
+
 class Base:
     __slot__ = (
         "current_value",
@@ -12,9 +26,8 @@ class Base:
         "building_options",
     )
 
-    COLOR = ["'None'", "'r'", "'b'"]
-    BOOL = ["True", "False"]
-    LINESTYLE = ["'-'", "'--'", "'-.'",]
+    COLOR = Choices("'None'", "'r'", "'b'")
+    LINESTYLE = Choices("'-'", "'--'", "'-.'")
 
     def __init__(self):
         super().__init__()
@@ -43,8 +56,8 @@ class Base:
     def copy_options(cls, options):
         new_options = dict()
         for k, v in options.items():
-            if isinstance(v, list):
-                v = v[0]
+            if isinstance(v, Choices):
+                v = v.default
             if isinstance(v, dict):
                 v = cls.copy_options(v)
             new_options[k] = v
@@ -54,7 +67,7 @@ class Base:
     def options_names(self):
         return list(self.current_value.keys())
 
-    def get_options(self, name, evaluate=True):
+    def get_option(self, name, evaluate=True):
         if evaluate:
             return eval(self.current_value[name])
         else:
@@ -222,24 +235,24 @@ class Subplot(Base):
             position="111",
             ylabel="''",
             xlabel="''",
-            grid=self.BOOL,
+            grid=Bool(),
             zorder="0",
             title="''",
             geo=dict(
                 coast=dict(
-                    coast=self.BOOL,
+                    coast=Bool(),
                     coast_color=self.COLOR,
                     coast_linewidth=".25",
                     coast_linestyle=self.LINESTYLE,
                 ),
                 river=dict(
-                    river=self.BOOL,
+                    river=FBool(),
                     river_color=self.COLOR,
                     river_linewidth=".25",
                     river_linestyle=self.LINESTYLE,
                 ),
                 border=dict(
-                    border=self.BOOL,
+                    border=FBool(),
                     border_color=self.COLOR,
                     border_linewidth=".25",
                     border_linestyle=self.LINESTYLE,
@@ -263,7 +276,7 @@ class Subplot(Base):
         return "Subplot"
 
     def build(self, figure):
-        ax = figure.add_subplot(self.get_options("position"), projection="plat_carre")
+        ax = figure.add_subplot(self.get_option("position"), projection="plat_carre")
         ax.id = self.id
         return ax
 
@@ -301,7 +314,7 @@ class FigureSet(Base):
                 urcrnrlon="180",
                 llcrnrlat="-90",
                 urcrnrlat="90",
-                projection=["'plat_carre'", "'ortho'"],
+                projection=Choices("'plat_carre'", "'ortho'"),
             ),
         )
         self.help = dict()
