@@ -14,6 +14,7 @@ class Base:
 
     COLOR = ["'None'", "'r'", "'b'"]
     BOOL = ["True", "False"]
+    LINESTYLE = ["'-'", "'--'", "'-.'",]
 
     def __init__(self):
         super().__init__()
@@ -138,25 +139,32 @@ class Base:
             child = item.build(parent)
             parent.child_id[child.id] = child
 
+    def get_set(self, item, k):
+        if k in self.building_options:
+            print(f"{self.__class__.__name__} : only for building : {k}")
+            return None, None
+        set_func = getattr(item, f"set_{k}", None)
+        get_func = getattr(item, f"get_{k}", None)
+        if set_func is None and hasattr(item, "has_") and item.has_(k):
+            set_func, get_func = lambda value: item.set_(k, value), lambda: item.get_(k)
+        if set_func is None or get_func is None:
+            print(
+                f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist {k}"
+            )
+            return None, None
+        return set_func, get_func
+
     def apply_options(self, item, options):
         for k, v in options.items():
             if isinstance(v, dict):
                 self.apply_options(item, v)
                 continue
-            set_func = getattr(item, f"set_{k}", None)
-            get_func = getattr(item, f"get_{k}", None)
-            if k in self.building_options:
-                print(f"{self.__class__.__name__} : only for building : {k}")
+            set_func, get_func = self.get_set(item, k)
+            if set_func is None:
                 continue
-            elif set_func is None or get_func is None:
-                print(
-                    f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist {k}"
-                )
-                continue
-            else:
-                new_value = eval(v)
-                if get_func() != new_value:
-                    set_func(new_value)
+            new_value = eval(v)
+            if get_func() != new_value:
+                set_func(new_value)
 
     def update(self, item, recursive=True):
         self.apply_options(item, self.options)
@@ -218,11 +226,24 @@ class Subplot(Base):
             zorder="0",
             title="''",
             geo=dict(
-                coast=dict(coast=self.BOOL, coast_color=self.COLOR, coast_linewidth="1"),
-                border=self.BOOL,
-                border_color=self.COLOR,
-                river=self.BOOL,
-                river_color=self.COLOR,
+                coast=dict(
+                    coast=self.BOOL,
+                    coast_color=self.COLOR,
+                    coast_linewidth=".25",
+                    coast_linestyle=self.LINESTYLE,
+                ),
+                river=dict(
+                    river=self.BOOL,
+                    river_color=self.COLOR,
+                    river_linewidth=".25",
+                    river_linestyle=self.LINESTYLE,
+                ),
+                border=dict(
+                    border=self.BOOL,
+                    border_color=self.COLOR,
+                    border_linewidth=".25",
+                    border_linestyle=self.LINESTYLE,
+                ),
             ),
         )
         self.help = dict(

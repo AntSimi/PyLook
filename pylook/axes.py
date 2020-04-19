@@ -23,43 +23,49 @@ class MapAxes(PyLookAxes):
     GEO_ELT = ("coast", "border", "river")
 
     def __init__(self, *args, **kwargs):
-        default = dict(
-            coast=dict(flag=True), border=dict(flag=False), river=dict(flag=False)
+        self.default = dict(
+            coast=dict(flag=True, color="gray"),
+            border=dict(flag=False, color="r"),
+            river=dict(flag=False, color="b"),
         )
         self.geo_flag = dict()
+        self.geo_kwargs = dict()
         self._geo_object = dict()
         self.geo_mappable = dict()
-        for geo_elt in self.GEO_ELT:
-            self.geo_flag[geo_elt] = kwargs.pop(geo_elt, default[geo_elt])
-            self._geo_object[geo_elt] = dict()
-            self.geo_mappable[geo_elt] = None
+        for geo in self.GEO_ELT:
+            self.geo_flag[geo] = kwargs.pop(geo, self.default[geo]['flag'])
+            self._geo_object[geo] = dict()
+            self.geo_kwargs[geo] = dict()
+            self.geo_mappable[geo] = None
         super().__init__(*args, **kwargs)
 
-    def set_coast(self, state):
-        self.geo_flag['coast'] = state
-        self.update_env()
+    def has_(self, key):
+        return key.startswith('coast') or key.startswith('border') or key.startswith('river')
 
-    def get_coast(self):
-        return self.geo_flag['coast']
+    def set_(self, key, value):
+        keys = key.split('_')
+        if len(keys) == 1:
+            self.geo_flag[key] = value
+            self.update_geo(key)
+        else:
+            geo, option = keys
+            if self.geo_mappable[geo] is not None:
+                if value is "None":
+                    value = self.default[geo][option]
+                set_func = getattr(self.geo_mappable[geo], f"set_{option}")
+                set_func(value)
+                self.geo_kwargs[geo][option] = value
 
-    def set_border(self, state):
-        self.geo_flag['border'] = state
-        self.update_env()
-
-    def get_border(self):
-        return self.geo_flag['border']
-
-    # def set_coast_color(self, color):
-    #     if self.coast_mappable is not None:
-    #         if color is "None":
-    #             color = "#BFBEBE"
-    #         self.coast_mappable.set_color(color)
-
-    # def get_coast_color(self):
-    #     "Return alwas quadruplet"
-    #     if self.coast_mappable is not None:
-    #         return self.coast_mappable.get_color()
-    #     return None
+    def get_(self, key):
+        keys = key.split('_')
+        if len(keys) == 1:
+            return self.geo_flag[keys[0]]
+        else:
+            geo, option = keys
+            get_func = getattr(self.geo_mappable[geo], f"get_{option}", None)
+            if get_func is None:
+                return None
+            return get_func()
 
     @property
     def gshhs_resolution(self):
@@ -76,35 +82,41 @@ class MapAxes(PyLookAxes):
         else:
             return "f"
 
-    @property
-    def coast_object(self):
+    def geo_object(self, geo):
+        pattern = dict(coast='GSHHS').get(geo, geo)
+        if geo == 'coast':
+            class_ = coast.CoastFile
+        else:
+            class_ = coast.BorderRiverFile
         if "GSHHS_DATA" in os.environ:
             res = self.gshhs_resolution
-            if res not in self._geo_object['coast']:
-                self._geo_object['coast'][res] = coast.CoastFile(
-                    f'{os.environ["GSHHS_DATA"]}/binned_GSHHS_{res}.nc'
+            if res not in self._geo_object[geo]:
+                self._geo_object[geo][res] = class_(
+                    f'{os.environ["GSHHS_DATA"]}/binned_{pattern}_{res}.nc'
                 )
-            return self._geo_object['coast'][res]
+            return self._geo_object[geo][res]
         else:
             res = "l"
-            if res not in self._geo_object['coast']:
+            if res not in self._geo_object[geo]:
                 fwd = os.path.join(os.path.dirname(__file__))
-                self._geo_object['coast'][res] = coast.CoastFile(
-                    f"{fwd}/gshhs_backup/binned_GSHHS_{res}.nc"
+                self._geo_object[geo][res] = class_(
+                    f"{fwd}/gshhs_backup/binned_{pattern}_{res}.nc"
                 )
-            return self._geo_object['coast'][res]
+            return self._geo_object[geo][res]
 
-    def update_env(self):
+    def update_geo(self, geo):
         xlim, ylim = self.coordinates_bbox
-        if self.geo_mappable['coast'] is not None:
-            self.geo_mappable['coast'].remove()
-            self.geo_mappable['coast'] = None
-        if self.geo_flag['coast']:
-            self.geo_mappable['coast'] = self.add_collection(
-                self.coast_object.lines(
-                    xlim[0], ylim[0], xlim[1], ylim[1], linewidth=0.25, color="k"
-                )
+        if self.geo_mappable[geo] is not None:
+            self.geo_mappable[geo].remove()
+            self.geo_mappable[geo] = None
+        if self.geo_flag[geo]:
+            self.geo_mappable[geo] = self.add_collection(
+                self.geo_object(geo).lines(xlim[0], ylim[0], xlim[1], ylim[1], **self.geo_kwargs[geo])
             )
+    
+    def update_env(self):
+        for geo in self.GEO_ELT:
+            self.update_geo(geo)
 
     def end_pan(self, *args, **kwargs):
         super().end_pan(*args, **kwargs)
