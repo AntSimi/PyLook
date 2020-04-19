@@ -7,14 +7,17 @@ class Choices(list):
         super().__init__(choices)
         self.default = self[0] if default is None else default
 
+
 class Bool(Choices):
     def __init__(self):
-        super().__init__('True', 'False')
+        super().__init__("True", "False")
+
 
 class FBool(Bool):
     def __init__(self):
         super().__init__()
         self.default = self[1]
+
 
 class Base:
     __slot__ = (
@@ -231,6 +234,46 @@ class Subplot(Base):
     QT_COLOR = "#EDE400"
 
     def __init__(self, *args, **kwargs):
+        self.help = dict(
+            position=dict(
+                doc="Axes specification must be a tuple of 3 values (nb_x, nb_y, i) or a list of 4 values [x0, y0, dx, dy] which are a fraction of figures."
+            )
+        )
+        super().__init__(*args, **kwargs)
+
+    @property
+    def known_children(self):
+        return [Method]
+
+
+class SimpleSubplot(Subplot):
+    __slot__ = tuple()
+
+    def __init__(self, *args, **kwargs):
+        self.init_value = dict(
+            position="111",
+            ylabel="''",
+            xlabel="''",
+            grid=Bool(),
+            zorder="0",
+            title="''",
+        )
+        super().__init__(*args, **kwargs)
+
+    @property
+    def name(self):
+        return "Simple subplot"
+
+    def build(self, figure):
+        ax = figure.add_subplot(self.get_option("position"), projection="pylook_simple")
+        ax.id = self.id
+        return ax
+
+
+class GeoSubplot(Subplot):
+    __slot__ = tuple()
+
+    def __init__(self, *args, **kwargs):
         self.init_value = dict(
             position="111",
             ylabel="''",
@@ -259,21 +302,12 @@ class Subplot(Base):
                 ),
             ),
         )
-        self.help = dict(
-            position=dict(
-                doc="Axes specification must be a tuple of 3 values (nb_x, nb_y, i) or a list of 4 values [x0, y0, dx, dy] which are a fraction of figures."
-            )
-        )
-        super().__init__(*args, **kwargs)
-        self.building_options = ("position",)
 
-    @property
-    def known_children(self):
-        return [Method]
+        super().__init__(*args, **kwargs)
 
     @property
     def name(self):
-        return "Subplot"
+        return "Geo subplot"
 
     def build(self, figure):
         ax = figure.add_subplot(self.get_option("position"), projection="plat_carre")
@@ -295,7 +329,7 @@ class Figure(Base):
 
     @property
     def known_children(self):
-        return [Subplot]
+        return [GeoSubplot, SimpleSubplot]
 
     @property
     def name(self):

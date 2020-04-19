@@ -1,5 +1,12 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
-from ..exchange_object import FigureSet, Figure, Subplot, Base as BaseObject, Bool, Choices
+from ..exchange_object import (
+    FigureSet,
+    Figure,
+    GeoSubplot,
+    Base as BaseObject,
+    Bool,
+    Choices,
+)
 
 
 class ComboBoxItem(QtWidgets.QComboBox):
@@ -118,7 +125,7 @@ class FiguresTree(QtWidgets.QTreeWidget):
     def init_tree(self):
         leaf = self.add_figures_set()
         leaf = self.add_child(leaf, Figure)
-        leaf = self.add_child(leaf, Subplot)
+        leaf = self.add_child(leaf, GeoSubplot)
         # self.set_options(leaf, dict(title="'Mon premier titre'", xlabel="'Longitude'"))
         return leaf
 
@@ -138,7 +145,7 @@ class FiguresTree(QtWidgets.QTreeWidget):
                 leaf_.setText(1, v)
                 leaf_.setData(0, self.INDEX_INIT, v)
                 leaf_.setData(0, self.INDEX_PREVIOUS, v)
-                leaf_.setFlags(QtCore.Qt.ItemIsTristate| QtCore.Qt.ItemIsEnabled)
+                leaf_.setFlags(QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsEnabled)
                 init_value = init_options[k]
                 if isinstance(init_value, Choices):
                     if isinstance(init_value, Bool):
@@ -154,6 +161,7 @@ class FiguresTree(QtWidgets.QTreeWidget):
                         )
 
     def add_leaf_from_exchange_object(self, parent, model):
+        self.blockSignals(True)
         leaf = QtWidgets.QTreeWidgetItem(parent)
         leaf.setText(0, model.name)
         for i in range(leaf.columnCount() + 1):
@@ -163,6 +171,7 @@ class FiguresTree(QtWidgets.QTreeWidget):
         leaf_options = QtWidgets.QTreeWidgetItem(leaf)
         leaf_options.setText(0, "options")
         self.add_options_to_a_leaf(leaf_options, model.options, model.init_value)
+        self.blockSignals(False)
         self.expand(self.indexFromItem(leaf_options))
         self.expand(self.indexFromItem(leaf))
         return leaf

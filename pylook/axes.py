@@ -2,6 +2,7 @@ import matplotlib.transforms as mtransforms
 import matplotlib.axes
 import matplotlib.axis as maxis
 import matplotlib.ticker as mticker
+import matplotlib.gridspec as mgridspec
 import os
 import os.path
 import pyproj
@@ -16,6 +17,24 @@ class PyLookAxes(matplotlib.axes.Axes):
 
     def get_grid(self):
         return self.xaxis._gridOnMajor
+
+    def set_position(self, *args, **kwargs):
+        # TODO maybe compare get_position result with args before to apply
+        if type(args[0]) is int:
+            nb_x, nb_y, n = tuple(map(int, str(args[0])))
+            i, j = (n - 1) // nb_x, (n - 1) % nb_y
+            bbox = mgridspec.GridSpec(nb_x, nb_y)[i, j].get_position(self.figure)
+            args = ((bbox.x0, bbox.y0, bbox.width, bbox.height),)
+        elif len(args[0]) == 3:
+            nb_x, nb_y, n = args[0]
+            i, j = (n - 1) // nb_x, (n - 1) % nb_y
+            bbox = mgridspec.GridSpec(nb_x, nb_y)[i, j].get_position(self.figure)
+            args = ((bbox.x0, bbox.y0, bbox.width, bbox.height),)
+        return super().set_position(*args, **kwargs)
+
+
+class SimpleAxes(PyLookAxes):
+    name = "pylook_simple"
 
 
 class MapAxes(PyLookAxes):
@@ -33,17 +52,21 @@ class MapAxes(PyLookAxes):
         self._geo_object = dict()
         self.geo_mappable = dict()
         for geo in self.GEO_ELT:
-            self.geo_flag[geo] = kwargs.pop(geo, self.default[geo]['flag'])
+            self.geo_flag[geo] = kwargs.pop(geo, self.default[geo]["flag"])
             self._geo_object[geo] = dict()
             self.geo_kwargs[geo] = dict()
             self.geo_mappable[geo] = None
         super().__init__(*args, **kwargs)
 
     def has_(self, key):
-        return key.startswith('coast') or key.startswith('border') or key.startswith('river')
+        return (
+            key.startswith("coast")
+            or key.startswith("border")
+            or key.startswith("river")
+        )
 
     def set_(self, key, value):
-        keys = key.split('_')
+        keys = key.split("_")
         if len(keys) == 1:
             self.geo_flag[key] = value
             self.update_geo(key)
@@ -57,7 +80,7 @@ class MapAxes(PyLookAxes):
                 self.geo_kwargs[geo][option] = value
 
     def get_(self, key):
-        keys = key.split('_')
+        keys = key.split("_")
         if len(keys) == 1:
             return self.geo_flag[keys[0]]
         else:
@@ -83,8 +106,8 @@ class MapAxes(PyLookAxes):
             return "f"
 
     def geo_object(self, geo):
-        pattern = dict(coast='GSHHS').get(geo, geo)
-        if geo == 'coast':
+        pattern = dict(coast="GSHHS").get(geo, geo)
+        if geo == "coast":
             class_ = coast.CoastFile
         else:
             class_ = coast.BorderRiverFile
@@ -111,9 +134,11 @@ class MapAxes(PyLookAxes):
             self.geo_mappable[geo] = None
         if self.geo_flag[geo]:
             self.geo_mappable[geo] = self.add_collection(
-                self.geo_object(geo).lines(xlim[0], ylim[0], xlim[1], ylim[1], **self.geo_kwargs[geo])
+                self.geo_object(geo).lines(
+                    xlim[0], ylim[0], xlim[1], ylim[1], **self.geo_kwargs[geo]
+                )
             )
-    
+
     def update_env(self):
         for geo in self.GEO_ELT:
             self.update_geo(geo)
@@ -385,5 +410,5 @@ class OrthoAxes(TransformAxes):
 def register_projection():
     import matplotlib.projections as mprojections
 
-    for axes in (PlatCarreAxes, OrthoAxes):
+    for axes in (PlatCarreAxes, OrthoAxes, SimpleAxes):
         mprojections.register_projection(axes)
