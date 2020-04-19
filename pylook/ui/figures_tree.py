@@ -75,10 +75,9 @@ class FiguresTree(QtWidgets.QTreeWidget):
         current_value = leaf.text(j)
         previous = leaf.data(0, self.INDEX_PREVIOUS)
         if leaf.flags() & QtCore.Qt.ItemIsUserCheckable:
-            print(leaf.checkState(1))
-        #     current_value = str(leaf.checkState(1) != 0)
-        #     leaf.setData(0, self.INDEX_PREVIOUS, current_value)
-        #     leaf.setText(j, str(leaf.checkState(1) != 0))
+            current_value = str(leaf.checkState(1) != 0)
+            leaf.setData(0, self.INDEX_PREVIOUS, current_value)
+            leaf.setText(j, str(leaf.checkState(1) != 0))
         if previous == current_value:
             return False
         try:
@@ -101,6 +100,9 @@ class FiguresTree(QtWidgets.QTreeWidget):
             for child in e_object.known_children:
                 action = menu.addAction(f"Add {child.__name__}", self.add_child)
                 action.setData((leaf, child))
+        menu.addSeparator()
+        menu.addAction("Collapse all", self.collapseAll)
+        menu.addAction("Expand all", self.expandAll)
         menu.exec(self.mapToGlobal(event))
 
     def add_child(self, leaf=None, class_object=None):
@@ -136,10 +138,10 @@ class FiguresTree(QtWidgets.QTreeWidget):
                 leaf_.setText(1, v)
                 leaf_.setData(0, self.INDEX_INIT, v)
                 leaf_.setData(0, self.INDEX_PREVIOUS, v)
-                leaf_.setFlags(leaf_.flags() | QtCore.Qt.ItemIsTristate)
+                leaf_.setFlags(QtCore.Qt.ItemIsTristate| QtCore.Qt.ItemIsEnabled)
                 init_value = init_options[k]
                 if isinstance(init_value, list):
-                    if init_value == BaseObject.BOOLEEN:
+                    if init_value == BaseObject.BOOL:
                         leaf_.setFlags(
                             QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled
                         )

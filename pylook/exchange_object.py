@@ -13,7 +13,7 @@ class Base:
     )
 
     COLOR = ["'None'", "'r'", "'b'"]
-    BOOLEEN = ["True", "False"]
+    BOOL = ["True", "False"]
 
     def __init__(self):
         super().__init__()
@@ -138,8 +138,11 @@ class Base:
             child = item.build(parent)
             parent.child_id[child.id] = child
 
-    def update(self, item, recursive=True):
-        for k, v in self.options.items():
+    def apply_options(self, item, options):
+        for k, v in options.items():
+            if isinstance(v, dict):
+                self.apply_options(item, v)
+                continue
             set_func = getattr(item, f"set_{k}", None)
             get_func = getattr(item, f"get_{k}", None)
             if k in self.building_options:
@@ -154,6 +157,9 @@ class Base:
                 new_value = eval(v)
                 if get_func() != new_value:
                     set_func(new_value)
+
+    def update(self, item, recursive=True):
+        self.apply_options(item, self.options)
         if recursive:
             for child in self:
                 if child.id not in item.child_id:
@@ -208,9 +214,16 @@ class Subplot(Base):
             position="111",
             ylabel="''",
             xlabel="''",
-            grid=self.BOOLEEN,
+            grid=self.BOOL,
             zorder="0",
             title="''",
+            geo=dict(
+                coast=dict(coast=self.BOOL, coast_color=self.COLOR, coast_linewidth="1"),
+                border=self.BOOL,
+                border_color=self.COLOR,
+                river=self.BOOL,
+                river_color=self.COLOR,
+            ),
         )
         self.help = dict(
             position=dict(

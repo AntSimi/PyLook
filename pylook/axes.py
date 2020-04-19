@@ -19,12 +19,47 @@ class PyLookAxes(matplotlib.axes.Axes):
 
 
 class MapAxes(PyLookAxes):
+
+    GEO_ELT = ("coast", "border", "river")
+
     def __init__(self, *args, **kwargs):
-        self._coast_object = dict()
-        self.coast_mappable = None
-        self.coast_flag = kwargs.pop("coast", True)
+        default = dict(
+            coast=dict(flag=True), border=dict(flag=False), river=dict(flag=False)
+        )
+        self.geo_flag = dict()
+        self._geo_object = dict()
+        self.geo_mappable = dict()
+        for geo_elt in self.GEO_ELT:
+            self.geo_flag[geo_elt] = kwargs.pop(geo_elt, default[geo_elt])
+            self._geo_object[geo_elt] = dict()
+            self.geo_mappable[geo_elt] = None
         super().__init__(*args, **kwargs)
-        self.set_env()
+
+    def set_coast(self, state):
+        self.geo_flag['coast'] = state
+        self.update_env()
+
+    def get_coast(self):
+        return self.geo_flag['coast']
+
+    def set_border(self, state):
+        self.geo_flag['border'] = state
+        self.update_env()
+
+    def get_border(self):
+        return self.geo_flag['border']
+
+    # def set_coast_color(self, color):
+    #     if self.coast_mappable is not None:
+    #         if color is "None":
+    #             color = "#BFBEBE"
+    #         self.coast_mappable.set_color(color)
+
+    # def get_coast_color(self):
+    #     "Return alwas quadruplet"
+    #     if self.coast_mappable is not None:
+    #         return self.coast_mappable.get_color()
+    #     return None
 
     @property
     def gshhs_resolution(self):
@@ -45,35 +80,31 @@ class MapAxes(PyLookAxes):
     def coast_object(self):
         if "GSHHS_DATA" in os.environ:
             res = self.gshhs_resolution
-            if res not in self._coast_object:
-                self._coast_object[res] = coast.CoastFile(
+            if res not in self._geo_object['coast']:
+                self._geo_object['coast'][res] = coast.CoastFile(
                     f'{os.environ["GSHHS_DATA"]}/binned_GSHHS_{res}.nc'
                 )
-            return self._coast_object[res]
+            return self._geo_object['coast'][res]
         else:
             res = "l"
-            if res not in self._coast_object:
+            if res not in self._geo_object['coast']:
                 fwd = os.path.join(os.path.dirname(__file__))
-                self._coast_object[res] = coast.CoastFile(
+                self._geo_object['coast'][res] = coast.CoastFile(
                     f"{fwd}/gshhs_backup/binned_GSHHS_{res}.nc"
                 )
-            return self._coast_object[res]
+            return self._geo_object['coast'][res]
 
     def update_env(self):
         xlim, ylim = self.coordinates_bbox
-        if self.coast_mappable is not None:
-            self.coast_mappable.remove()
-            self.coast_mappable = None
-        if self.coast_flag:
-            self.coast_mappable = self.add_collection(
+        if self.geo_mappable['coast'] is not None:
+            self.geo_mappable['coast'].remove()
+            self.geo_mappable['coast'] = None
+        if self.geo_flag['coast']:
+            self.geo_mappable['coast'] = self.add_collection(
                 self.coast_object.lines(
                     xlim[0], ylim[0], xlim[1], ylim[1], linewidth=0.25, color="k"
                 )
             )
-
-    def set_env(self):
-        # print(self.bbox)
-        pass
 
     def end_pan(self, *args, **kwargs):
         super().end_pan(*args, **kwargs)
