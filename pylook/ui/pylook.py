@@ -117,7 +117,13 @@ class Ui_MainWindow(object):
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.figures_dock)
         self.open_files = QtWidgets.QAction(MainWindow)
         self.open_files.setObjectName("open_files")
+        self.load_object = QtWidgets.QAction(MainWindow)
+        self.load_object.setObjectName("load_object")
+        self.save_object = QtWidgets.QAction(MainWindow)
+        self.save_object.setObjectName("save_object")
         self.menuFile.addAction(self.open_files)
+        self.menuFile.addAction(self.load_object)
+        self.menuFile.addAction(self.save_object)
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -133,6 +139,8 @@ class Ui_MainWindow(object):
         self.figures_tree.itemChanged['QTreeWidgetItem*','int'].connect(self.figures_tree.item_changed)
         self.figures_tree.itemDoubleClicked['QTreeWidgetItem*','int'].connect(self.figures_tree.edit_item)
         self.figures_tree.update_figures.connect(self.figures_tab_dock.update_figures)
+        self.load_object.triggered.connect(self.figures_tree.load_object)
+        self.save_object.triggered.connect(self.figures_tree.save_object)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         MainWindow.setTabOrder(self.data_tree, self.figures_tree)
         MainWindow.setTabOrder(self.figures_tree, self.figures_tab_dock)
@@ -153,7 +161,9 @@ class Ui_MainWindow(object):
         self.figures_dock.setWindowTitle(_translate("MainWindow", "Figures"))
         self.figures_tree.setSortingEnabled(False)
         self.figures_tree.headerItem().setText(1, _translate("MainWindow", "value"))
-        self.open_files.setText(_translate("MainWindow", "Open"))
+        self.open_files.setText(_translate("MainWindow", "Open dataset"))
+        self.load_object.setText(_translate("MainWindow", "Load figure object"))
+        self.save_object.setText(_translate("MainWindow", "Save figure object"))
 
 from .data_tree import DataTree
 from .figures_tree import FiguresTree

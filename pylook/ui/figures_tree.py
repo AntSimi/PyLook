@@ -189,3 +189,16 @@ class FiguresTree(QtWidgets.QTreeWidget):
 
     def tree_to_figures(self):
         self.update_figures.emit(self.get_objects())
+
+    def save_object(self, event):
+        filename, extension = QtWidgets.QFileDialog.getSaveFileName(
+            caption="Object to load", filter="PyLook object file (*.plk)",
+        )
+        object_to_save = self.get_objects()
+        # import json
+        # json()
+
+    def load_object(self, event):
+        filename, extension = QtWidgets.QFileDialog.getOpenFileName(
+            caption="Object to save", filter="PyLook object file (*.plk)",
+        )
