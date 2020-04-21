@@ -132,7 +132,7 @@ class FiguresTree(QtWidgets.QTreeWidget):
     def set_options(self, leaf, options):
         pass
 
-    def add_options_to_a_leaf(self, leaf, options, init_options):
+    def add_options_to_a_leaf(self, leaf, options, init_options, help_):
         keys = list(options.keys())
         keys.sort()
         for k in keys:
@@ -140,12 +140,19 @@ class FiguresTree(QtWidgets.QTreeWidget):
             leaf_ = QtWidgets.QTreeWidgetItem(leaf)
             leaf_.setText(0, k)
             if isinstance(v, dict):
-                self.add_options_to_a_leaf(leaf_, v, init_options[k])
+                self.add_options_to_a_leaf(
+                    leaf_, v, init_options[k], help_.get(k, dict())
+                )
             else:
                 leaf_.setText(1, v)
                 leaf_.setData(0, self.INDEX_INIT, v)
                 leaf_.setData(0, self.INDEX_PREVIOUS, v)
                 leaf_.setFlags(QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsEnabled)
+                help__ = help_.get(k, dict())
+                if "doc" in help__:
+                    leaf_.setToolTip(0, help__["doc"])
+                    leaf_.setToolTip(1, help__["doc"])
+
                 init_value = init_options[k]
                 if isinstance(init_value, Choices):
                     if isinstance(init_value, Bool):
@@ -166,11 +173,12 @@ class FiguresTree(QtWidgets.QTreeWidget):
         leaf.setText(0, model.name)
         for i in range(leaf.columnCount() + 1):
             leaf.setBackground(i, QtGui.QBrush((QtGui.QColor(model.QT_COLOR))))
-        # leaf.setToolTip(0, dataset.summary(child=False, full=True))
         leaf.setData(0, 4, model)
         leaf_options = QtWidgets.QTreeWidgetItem(leaf)
         leaf_options.setText(0, "options")
-        self.add_options_to_a_leaf(leaf_options, model.options, model.init_value)
+        self.add_options_to_a_leaf(
+            leaf_options, model.options, model.init_value, model.help
+        )
         self.blockSignals(False)
         self.expand(self.indexFromItem(leaf_options))
         self.expand(self.indexFromItem(leaf))
