@@ -61,7 +61,6 @@
     </property>
     <addaction name="open_files"/>
     <addaction name="load_object"/>
-    <addaction name="save_object"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -311,8 +310,8 @@
     <slot>context_menu()</slot>
     <slot>edit_item()</slot>
     <slot>item_changed()</slot>
-    <slot>load_object()</slot>
-    <slot>save_object()</slot>
+    <slot>load_object_dialog()</slot>
+    <slot>save_object_dialog()</slot>
    </slots>
   </customwidget>
   <customwidget>
@@ -514,23 +513,7 @@
    <sender>load_object</sender>
    <signal>triggered()</signal>
    <receiver>figures_tree</receiver>
-   <slot>load_object()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>131</x>
-     <y>471</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>save_object</sender>
-   <signal>triggered()</signal>
-   <receiver>figures_tree</receiver>
-   <slot>save_object()</slot>
+   <slot>load_object_dialog()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>

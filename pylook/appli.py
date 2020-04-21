@@ -25,7 +25,7 @@ class GenericParser(argparse.ArgumentParser):
             "-v",
             "--verbose",
             default="WARNING",
-            choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+            choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
         )
 
     def parse_args(self, *args, **kwargs):
@@ -42,6 +42,7 @@ class PyLookParser(GenericParser):
         group = self.add_argument_group("Data")
         group.add_argument("filenames", nargs="*")
         group.add_argument("--demo_datasets", action="store_true")
+        group.add_argument("--figures_set_files", nargs="+")
 
     def parse_args(self, *args, **kwargs):
         args = super().parse_args(*args, **kwargs)

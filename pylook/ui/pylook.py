@@ -123,7 +123,6 @@ class Ui_MainWindow(object):
         self.save_object.setObjectName("save_object")
         self.menuFile.addAction(self.open_files)
         self.menuFile.addAction(self.load_object)
-        self.menuFile.addAction(self.save_object)
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -139,8 +138,7 @@ class Ui_MainWindow(object):
         self.figures_tree.itemChanged['QTreeWidgetItem*','int'].connect(self.figures_tree.item_changed)
         self.figures_tree.itemDoubleClicked['QTreeWidgetItem*','int'].connect(self.figures_tree.edit_item)
         self.figures_tree.update_figures.connect(self.figures_tab_dock.update_figures)
-        self.load_object.triggered.connect(self.figures_tree.load_object)
-        self.save_object.triggered.connect(self.figures_tree.save_object)
+        self.load_object.triggered.connect(self.figures_tree.load_object_dialog)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         MainWindow.setTabOrder(self.data_tree, self.figures_tree)
         MainWindow.setTabOrder(self.figures_tree, self.figures_tab_dock)

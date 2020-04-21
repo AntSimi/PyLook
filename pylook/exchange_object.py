@@ -1,8 +1,32 @@
 import logging
 import uuid
+import json
 from copy import deepcopy
 
 logger = logging.getLogger("pylook")
+
+
+class PyLookEncoder(json.JSONEncoder):
+    INTERN_ATTR = ("building_options", "help", "id", "init_value")
+
+    def default(self, o):
+        dump = {k: v for k, v in o.__dict__.items() if k not in self.INTERN_ATTR}
+        dump["__type__"] = o.__class__.__name__
+        return dump
+
+
+def as_pylook_object(dct):
+    object_type = dct.get("__type__", None)
+    for obj in (FigureSet, Figure, GeoSubplot, SimpleSubplot, Method, Data, Legend):
+        if obj.__name__ == object_type:
+            new_obj = obj()
+            new_obj.appends(*dct["child"])
+            for k, v in dct.items():
+                if k in ("__type__", "child"):
+                    continue
+                setattr(new_obj, k, v)
+            return new_obj
+    return dct
 
 
 class Choices(list):
@@ -44,6 +68,12 @@ class Base:
 
     def __new__(cls):
         return super().__new__(cls)
+
+    def save(self, filename):
+        with open(filename, "w") as f:
+            json.dump(
+                self, f, cls=PyLookEncoder, sort_keys=True, indent=4, ensure_ascii=False
+            )
 
     def copy(self):
         new = self.__new__(self.__class__)

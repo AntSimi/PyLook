@@ -1,3 +1,4 @@
+import json
 from PyQt5 import QtWidgets, QtGui, QtCore
 from ..exchange_object import (
     FigureSet,
@@ -6,6 +7,7 @@ from ..exchange_object import (
     Base as BaseObject,
     Bool,
     Choices,
+    as_pylook_object,
 )
 
 
@@ -100,9 +102,14 @@ class FiguresTree(QtWidgets.QTreeWidget):
         leaf = self.itemAt(event)
         menu = QtWidgets.QMenu(self)
         menu.addAction("Add Figures Set", self.add_figures_set)
-        menu.addAction("test", self.tree_to_figures)
+        # menu.addAction("test", self.tree_to_figures)
         if leaf:
             e_object = self.get_exchange_object(leaf)
+            if isinstance(e_object, FigureSet):
+                action = menu.addAction(
+                    "Save this Figures Set", self.save_object_dialog
+                )
+                action.setData(leaf)
             menu.addSeparator()
             for child in e_object.known_children:
                 action = menu.addAction(f"Add {child.__name__}", self.add_child)
@@ -114,8 +121,7 @@ class FiguresTree(QtWidgets.QTreeWidget):
 
     def add_child(self, leaf=None, class_object=None):
         if leaf is None:
-            sender = self.sender()
-            leaf, class_object = sender.data()
+            leaf, class_object = self.sender().data()
         return self.add_leaf_from_exchange_object(leaf, class_object())
 
     def add_figures_set(self):
@@ -198,15 +204,17 @@ class FiguresTree(QtWidgets.QTreeWidget):
     def tree_to_figures(self):
         self.update_figures.emit(self.get_objects())
 
-    def save_object(self, event):
+    def save_object_dialog(self):
+        figure_set = self.get_objects(self.sender().data())[0]
         filename, extension = QtWidgets.QFileDialog.getSaveFileName(
-            caption="Object to load", filter="PyLook object file (*.plk)",
+            caption="Object to save", filter="PyLook object file (*.plk)",
         )
-        object_to_save = self.get_objects()
-        # import json
-        # json()
+        figure_set.save(filename)
 
-    def load_object(self, event):
+    def load_object_dialog(self, event):
         filename, extension = QtWidgets.QFileDialog.getOpenFileName(
             caption="Object to save", filter="PyLook object file (*.plk)",
         )
+        with open(filename) as f:
+            loading_object = json.load(f, object_hook=as_pylook_object)
+        print(loading_object)
