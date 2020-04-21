@@ -1,5 +1,8 @@
-from copy import deepcopy
+import logging
 import uuid
+from copy import deepcopy
+
+logger = logging.getLogger("pylook")
 
 
 class Choices(list):
@@ -157,14 +160,14 @@ class Base:
 
     def get_set(self, item, k):
         if k in self.building_options:
-            print(f"{self.__class__.__name__} : only for building : {k}")
+            logger.debug(f"{self.__class__.__name__} : only for building : {k}")
             return None, None
         set_func = getattr(item, f"set_{k}", None)
         get_func = getattr(item, f"get_{k}", None)
         if set_func is None and hasattr(item, "has_") and item.has_(k):
             set_func, get_func = lambda value: item.set_(k, value), lambda: item.get_(k)
         if set_func is None or get_func is None:
-            print(
+            logger.debug(
                 f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist {k}"
             )
             return None, None

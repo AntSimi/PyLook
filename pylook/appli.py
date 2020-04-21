@@ -1,11 +1,13 @@
 import argparse
 import PyQt5.QtWidgets
 import sys
+import logging
 
 # FIXME if remove problem with signal ?
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from .ui.pylook import Ui_MainWindow
 from .data.data_store import DataStore
+from .logger import start_logger
 
 
 class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
@@ -13,6 +15,8 @@ class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
         self.figures_tree.tree_to_figures()
+        # TO DO : ugly fix to connect logging with statusbar
+        logging.getLogger("pylook").handlers[0].set_statusbar(self.statusbar)
 
 
 class GenericParser(argparse.ArgumentParser):
@@ -21,12 +25,13 @@ class GenericParser(argparse.ArgumentParser):
             "-v",
             "--verbose",
             default="WARNING",
-            choices=("DEBUG", "INFO", "WARNING", "ERROR"),
-            # action=,
+            choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
         )
 
     def parse_args(self, *args, **kwargs):
+        logger = start_logger()
         args = super().parse_args(*args, **kwargs)
+        logger.setLevel(getattr(logging, args.verbose.upper()))
         return args
 
 
