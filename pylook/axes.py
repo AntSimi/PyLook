@@ -1,3 +1,4 @@
+import logging
 import matplotlib.transforms as mtransforms
 import matplotlib.axes
 import matplotlib.axis as maxis
@@ -11,7 +12,18 @@ import numba
 from . import coast
 
 
+logger = logging.getLogger("pylook")
+
+
 class PyLookAxes(matplotlib.axes.Axes):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.callback_axes_properties = None
+
+    def set_callback_axes_properties(self, callback):
+        self.callback_axes_properties = callback
+
     def set_grid(self, state):
         return self.grid(state)
 
@@ -22,7 +34,8 @@ class PyLookAxes(matplotlib.axes.Axes):
         # TODO maybe compare get_position result with args before to apply
         if type(args[0]) is int:
             nb_x, nb_y, n = tuple(map(int, str(args[0])))
-            i, j = (n - 1) // nb_x, (n - 1) % nb_y
+            i, j = (n - 1) // nb_y, (n - 1) % nb_y
+            logger.trace(f'Axes will be set with (i={i}, j={j}) for a grid ({nb_x}, {nb_y})')
             bbox = mgridspec.GridSpec(nb_x, nb_y)[i, j].get_position(self.figure)
             args = ((bbox.x0, bbox.y0, bbox.width, bbox.height),)
         elif len(args[0]) == 3:
@@ -146,6 +159,15 @@ class MapAxes(PyLookAxes):
     def end_pan(self, *args, **kwargs):
         super().end_pan(*args, **kwargs)
         self.update_env()
+        self.emit_axes_properties()
+
+    def emit_axes_properties(self):
+        kwargs = dict()
+        kwargs['llcrnrlon'], kwargs['urcrnrlon'] = self.get_xlim()
+        kwargs['llcrnrlat'], kwargs['urcrnrlat'] = self.get_ylim()
+        if self.callback_axes_properties:
+            logger.trace(f"We will notify all axes from axes {self.id} with : {kwargs}")
+            self.callback_axes_properties(self.id, kwargs)
 
 
 class PlatCarreAxes(MapAxes):
@@ -175,6 +197,16 @@ class PlatCarreAxes(MapAxes):
             y0, y1 = bounds
         y0, y1 = max(y0, -90), min(y1, 90)
         super().set_ylim(y0, y1)
+
+    def set_axes_with_message(self, properties):
+        x0, x1 = properties.get('llcrnrlon', None), properties.get('urcrnrlon', None)
+        if x0 is not None and x1 is not None:
+            self.set_xlim(x0,x1)
+        y0, y1 = properties.get('llcrnrlat', None), properties.get('urcrnrlat', None)
+        if y0 is not None and y1 is not None:
+            self.set_ylim(y0,y1)
+        self.update_env()
+        
 
 
 class ProjTransform(mtransforms.Transform):
