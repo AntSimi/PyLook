@@ -1,7 +1,4 @@
 from PyQt5 import QtWidgets, QtGui
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
-from ..figure import Figure
 
 
 class FigureWidget(QtWidgets.QWidget):
@@ -11,23 +8,15 @@ class FigureWidget(QtWidgets.QWidget):
         self.setup_widget()
 
     def setup_widget(self):
-        self.figure = Figure()
-        self.figure.canvas = FigureCanvasQTAgg(self.figure)
-        self.figure.toolbar = NavigationToolbar2QT(self.figure.canvas, self)
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.figure.canvas)
-        vbox.addWidget(self.figure.toolbar)
-        self.setLayout(vbox)
-
-        self.exchange_object.build_child(self.figure)
+        self.figure = self.exchange_object.build(self)
         self.exchange_object.update(self.figure)
 
     @property
     def id(self):
         return self.exchange_object.id
 
-    def update(self, e_object):
-        e_object.update(self.figure)
+    def update(self, obj):
+        obj.update(self.figure)
         self.figure.canvas.draw()
 
 
@@ -54,15 +43,6 @@ class TabWidget(QtWidgets.QTabWidget):
             self.insertTab(self.count() + 1, widget_from_tab, window.windowTitle())
             self.floating_figures.pop(widget_from_tab.id)
             return event.accept()
-            # msg = "<b>Do you want re-dock as a new tab?"
-            # conditional = QtWidgets.QMessageBox.question(
-            #     self, "Undocked Tab", msg, QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-            #     QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes
-            # if conditional:
-            #     self.insertTab(self.count() + 1, widget_from_tab, dialog.windowTitle())
-            #     return event.accept()
-            # else:
-            #     return event.ignore()
 
         window.closeEvent = closeEvent_override
         self.removeTab(index)

@@ -2,6 +2,11 @@ import logging
 import uuid
 import json
 from copy import deepcopy
+from PyQt5 import QtWidgets
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+from .figure import Figure as FigurePlot
+
 
 logger = logging.getLogger("pylook")
 
@@ -362,7 +367,7 @@ class Figure(Base):
         self.init_value = dict(
             facecolor=self.COLOR, figsize="None", suptitle="''", dpi="100"
         )
-        self.help = dict()
+        self.help = dict(figsize=dict(doc="Will be not use in GUI"))
         super().__init__(*args, **kwargs)
 
     @property
@@ -372,6 +377,19 @@ class Figure(Base):
     @property
     def name(self):
         return "Figure"
+
+    def build(self, widget):
+        fig = FigurePlot()
+        fig.canvas = FigureCanvasQTAgg(fig)
+        fig.toolbar = NavigationToolbar2QT(fig.canvas, widget)
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(fig.canvas)
+        vbox.addWidget(fig.toolbar)
+        widget.setLayout(vbox)
+        self.build_child(fig)
+        for child in fig.child_id.values():
+            child.set_callback_axes_properties(fig.axes_properties_message)
+        return fig
 
 
 class FigureSet(Base):

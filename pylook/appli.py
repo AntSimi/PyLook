@@ -2,9 +2,6 @@ import argparse
 import PyQt5.QtWidgets
 import sys
 import logging
-
-# FIXME if remove problem with signal ?
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from .ui.pylook import Ui_MainWindow
 from .data.data_store import DataStore
 from .logger import start_logger
