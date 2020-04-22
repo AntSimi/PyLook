@@ -117,6 +117,11 @@ class Base:
         for i in self.child:
             yield i
 
+    def pop_childs(self):
+        childs = self.child
+        self.child = list()
+        return childs
+
     def append(self, elt):
         self.child.append(elt)
 

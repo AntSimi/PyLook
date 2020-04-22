@@ -1,3 +1,4 @@
+import logging
 import json
 from PyQt5 import QtWidgets, QtGui, QtCore
 from ..exchange_object import (
@@ -10,15 +11,18 @@ from ..exchange_object import (
     as_pylook_object,
 )
 
+logger = logging.getLogger("pylook")
+
 
 class ComboBoxItem(QtWidgets.QComboBox):
     INDEX_PREVIOUS = 5
 
-    def __init__(self, parent, leaf, choices):
+    def __init__(self, parent, leaf, current, choices):
         super().__init__(parent)
         self.leaf = leaf
         self.setEditable(True)
         self.addItems(choices)
+        self.setCurrentText(current)
         self.activated.connect(self.combo_done)
 
     def combo_done(self, event):
@@ -36,7 +40,6 @@ class FiguresTree(QtWidgets.QTreeWidget):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.init_tree()
 
     @classmethod
     def get_exchange_object(cls, leaf, with_key=False):
@@ -132,17 +135,14 @@ class FiguresTree(QtWidgets.QTreeWidget):
         leaf = self.add_figures_set()
         leaf = self.add_child(leaf, Figure)
         leaf = self.add_child(leaf, GeoSubplot)
-        # self.set_options(leaf, dict(title="'Mon premier titre'", xlabel="'Longitude'"))
         return leaf
-
-    def set_options(self, leaf, options):
-        pass
 
     def add_options_to_a_leaf(self, leaf, options, init_options, help_):
         keys = list(options.keys())
         keys.sort()
         for k in keys:
             v = options[k]
+            logger.trace(f"keys '{k}' will be loaded with value : {v}")
             leaf_ = QtWidgets.QTreeWidgetItem(leaf)
             leaf_.setText(0, k)
             if isinstance(v, dict):
@@ -170,15 +170,17 @@ class FiguresTree(QtWidgets.QTreeWidget):
                         )
                     else:
                         self.setItemWidget(
-                            leaf_, 1, ComboBoxItem(self, leaf_, init_value)
+                            leaf_, 1, ComboBoxItem(self, leaf_, v, init_value)
                         )
 
     def add_leaf_from_exchange_object(self, parent, model):
+        logger.debug(f"Add a leaf {model.__class__.__name__}")
         self.blockSignals(True)
         leaf = QtWidgets.QTreeWidgetItem(parent)
         leaf.setText(0, model.name)
         for i in range(leaf.columnCount() + 1):
             leaf.setBackground(i, QtGui.QBrush((QtGui.QColor(model.QT_COLOR))))
+        childs = model.pop_childs()
         leaf.setData(0, 4, model)
         leaf_options = QtWidgets.QTreeWidgetItem(leaf)
         leaf_options.setText(0, "options")
@@ -186,35 +188,42 @@ class FiguresTree(QtWidgets.QTreeWidget):
             leaf_options, model.options, model.init_value, model.help
         )
         self.blockSignals(False)
+        for child in childs:
+            self.add_leaf_from_exchange_object(leaf, child)
+
         self.expand(self.indexFromItem(leaf_options))
         self.expand(self.indexFromItem(leaf))
         return leaf
 
     def get_objects(self, leaf=None):
-        out = list()
+        out = list() if leaf is None else leaf.data(0, 4).copy()
         for i in range(leaf.childCount() if leaf else self.topLevelItemCount()):
             child_leaf = leaf.child(i) if leaf else self.topLevelItem(i)
-            data = child_leaf.data(0, 4)
-            if isinstance(data, BaseObject):
-                data = data.copy()
-                data.appends(*self.get_objects(child_leaf))
-                out.append(data)
+            if not isinstance(child_leaf.data(0, 4), BaseObject):
+                continue
+            out.append(self.get_objects(child_leaf))
         return out
 
     def tree_to_figures(self):
         self.update_figures.emit(self.get_objects())
 
     def save_object_dialog(self):
-        figure_set = self.get_objects(self.sender().data())[0]
+        figure_set = self.get_objects(self.sender().data())
         filename, extension = QtWidgets.QFileDialog.getSaveFileName(
             caption="Object to save", filter="PyLook object file (*.plk)",
         )
-        figure_set.save(filename)
+        if filename:
+            figure_set.save(filename)
 
     def load_object_dialog(self, event):
         filename, extension = QtWidgets.QFileDialog.getOpenFileName(
             caption="Object to save", filter="PyLook object file (*.plk)",
         )
-        with open(filename) as f:
-            loading_object = json.load(f, object_hook=as_pylook_object)
-        print(loading_object)
+        if filename:
+            self.load_object(filename)
+
+    def load_object(self, obj):
+        if isinstance(obj, str):
+            with open(obj) as f:
+                obj = json.load(f, object_hook=as_pylook_object)
+        self.add_leaf_from_exchange_object(self, obj)

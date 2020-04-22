@@ -2,7 +2,9 @@ import logging
 
 
 class ColorFormatter(logging.Formatter):
-    COLOR = dict(CRITICAL="95", ERROR="31", WARNING="33", INFO="32", DEBUG="34",)
+    COLOR = dict(
+        CRITICAL="95", ERROR="31", WARNING="33", INFO="32", DEBUG="34", TRACE=30
+    )
 
     def format(self, record, color=True):
         if color:
@@ -38,6 +40,9 @@ class PyLookHandler(logging.StreamHandler):
 
 
 def start_logger():
+    TRACE = 5
+    logging.addLevelName(TRACE, "TRACE")
     logger = logging.getLogger("pylook")
     logger.addHandler(PyLookHandler())
+    logger.trace = lambda msg, *args, **kwargs: logger._log(TRACE, msg, args, **kwargs)
     return logger
