@@ -190,8 +190,6 @@ class Base:
         raise Exception("must be define")
 
     def build_child(self, parent, ids=None):
-        if not hasattr(parent, "child_id"):
-            parent.child_id = dict()
         for item in self:
             if ids is not None and item.id not in ids:
                 continue
@@ -389,7 +387,12 @@ class Figure(Base):
         self.build_child(fig)
         for child in fig.child_id.values():
             child.set_callback_axes_properties(fig.axes_properties_message)
+        fig.id = self.id
         return fig
+
+    def update(self, figure, *args, **kwargs):
+        super().update(figure, *args, **kwargs)
+        figure.canvas.draw()
 
 
 class FigureSet(Base):

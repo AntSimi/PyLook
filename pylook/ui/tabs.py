@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets, QtGui
+from ..figures_set import FigureSet
 
 
 class FigureWidget(QtWidgets.QWidget):
@@ -15,10 +16,6 @@ class FigureWidget(QtWidgets.QWidget):
     def id(self):
         return self.exchange_object.id
 
-    def update(self, obj):
-        obj.update(self.figure)
-        self.figure.canvas.draw()
-
 
 class TabWidget(QtWidgets.QTabWidget):
     def __init__(self, parent=None, *args, **kwargs):
@@ -26,6 +23,7 @@ class TabWidget(QtWidgets.QTabWidget):
         self.parent = parent
         self.tabBarDoubleClicked.connect(self.onTabBarClicked)
         self.floating_figures = dict()
+        self.figure_set = dict()
 
     def onTabBarClicked(self, index):
         if self.count() > 1:
@@ -71,8 +69,11 @@ class TabWidget(QtWidgets.QTabWidget):
     def update_figures(self, figure_sets):
         known_id = self.known_id
         for figure_set in figure_sets:
+            self.figure_set[figure_set.id] = FigureSet()
             for figure in figure_set:
                 if figure.id in known_id:
-                    self.figure(figure.id).update(figure)
+                    figure.update(self.figure(figure.id).figure)
                 else:
-                    self.addTab(FigureWidget(figure), str(figure.id))
+                    fw = FigureWidget(figure)
+                    self.addTab(fw, str(figure.id))
+                    self.figure_set[figure_set.id].append_child(fw.figure)
