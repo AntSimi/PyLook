@@ -84,8 +84,12 @@ class SubParser(argparse.ArgumentParser):
         super().__init__(*args, **kwargs)
         for k, v in opts.items():
             if isinstance(v, dict):
-                self.add_argument(f"--{k}",)
-                self.sub_parser[k] = self.__class__(options=v, help_options=help_opts.get(k, dict()))
+                self.add_argument(
+                    f"--{k}", help=f"For more help on this item write {k}=help"
+                )
+                self.sub_parser[k] = self.__class__(
+                    options=v, help_options=help_opts.get(k, dict())
+                )
             else:
                 if isinstance(v, Choices):
                     v_ = v.default
@@ -102,17 +106,37 @@ class SubParser(argparse.ArgumentParser):
         args = super().parse_args(*args, **kwargs)
         for name, parser in self.sub_parser.items():
             sub_args = getattr(args, name)
-            # sub_args = [
-                # f"--{item}" for item in (tuple() if sub_args is None else sub_args)
-            # ]
-            print(sub_args)
-            print(type(sub_args))
             if sub_args is None:
                 setattr(args, name, parser.parse_args(list()))
             else:
-                print(parser.parse_args(sub_args))
-                # setattr(args, name, parser.parse_args(sub_args))
+                if sub_args.startswith("[") and sub_args.endswith("]"):
+                    sub_args = sub_args[1:-1]
+                if "[" not in sub_args:
+                    sub_args = [f"--{item}" for item in sub_args.split(",")]
+                else:
+                    sub_args = [
+                        f"--{item}" for item in split_(sub_args, ",") if len(item)
+                    ]
+                setattr(args, name, parser.parse_args(sub_args))
         return args
+
+
+def split_(args, pattern):
+    """split only if pattern are not between [ and ]
+    """
+    count = 0
+    elts = list()
+    i_previous = 0
+    for i, c in enumerate(args):
+        if c == "[":
+            count += 1
+        elif c == "]":
+            count -= 1
+        if count == 0 and c == pattern:
+            elts.append(args[i_previous:i])
+            i_previous = i + 1
+    elts.append(args[i_previous:])
+    return elts
 
 
 def data_look(args=None):

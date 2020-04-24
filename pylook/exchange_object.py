@@ -41,8 +41,8 @@ class Choices(list):
 
     def summary(self, shorten=False):
         if shorten and len(self) > 10:
-            return ', '.join(self[:6]) + ', ...'
-        return ', '.join(self)
+            return ", ".join(self[:6]) + ", ..."
+        return ", ".join(self)
 
 
 class Bool(Choices):
@@ -66,7 +66,9 @@ class Base:
         "building_options",
     )
 
-    COLOR = Choices("'None'", "'r'", "'b'", "'y'", "'g'", "'k'", "'c'", "'w'", "'olive'")
+    COLOR = Choices(
+        "'None'", "'r'", "'b'", "'y'", "'g'", "'k'", "'c'", "'w'", "'olive'"
+    )
     LINESTYLE = Choices("'-'", "'--'", "'-.'")
 
     def __init__(self):
@@ -350,6 +352,7 @@ class GeoSubplot(Subplot):
         )
 
         super().__init__(*args, **kwargs)
+        self.help["geo"] = dict(river=dict(river=dict(doc="Display river if True")))
 
     @property
     def name(self):
