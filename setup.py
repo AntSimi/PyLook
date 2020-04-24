@@ -16,7 +16,8 @@ setup(
     entry_points=dict(
         console_scripts=[
             "PyLook = pylook.appli:pylook",
-            "DHeader = pylook.appli:dataheader",
+            "DHeader = pylook.appli:data_header",
+            "DataLook = pylook.data_look:data_look",
         ]
     ),
 )

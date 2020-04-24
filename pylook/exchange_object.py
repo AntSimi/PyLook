@@ -39,6 +39,11 @@ class Choices(list):
         super().__init__(choices)
         self.default = self[0] if default is None else default
 
+    def summary(self, shorten=False):
+        if shorten and len(self) > 10:
+            return ', '.join(self[:6]) + ', ...'
+        return ', '.join(self)
+
 
 class Bool(Choices):
     def __init__(self):
@@ -61,7 +66,7 @@ class Base:
         "building_options",
     )
 
-    COLOR = Choices("'None'", "'r'", "'b'")
+    COLOR = Choices("'None'", "'r'", "'b'", "'y'", "'g'", "'k'", "'c'", "'w'", "'olive'")
     LINESTYLE = Choices("'-'", "'--'", "'-.'")
 
     def __init__(self):
