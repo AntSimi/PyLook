@@ -1,11 +1,14 @@
 import logging
 import uuid
 import json
+import argparse
+import sys
 from copy import deepcopy
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from .figure import Figure as FigurePlot
+from .figures_set import FigureSet as FigureSetPlot
 
 
 logger = logging.getLogger("pylook")
@@ -86,6 +89,20 @@ class Base:
             json.dump(
                 self, f, cls=PyLookEncoder, sort_keys=True, indent=4, ensure_ascii=False
             )
+
+    @classmethod
+    def with_namespace(cls, namespace):
+        obj = cls()
+        obj.update_options(obj.options, namespace)
+        return obj
+
+    @classmethod
+    def update_options(cls, options, parser_options):
+        for k, v in parser_options._get_kwargs():
+            if isinstance(v, argparse.Namespace):
+                cls.update_options(options[k], v)
+            else:
+                options[k] = v
 
     def copy(self):
         new = self.__new__(self.__class__)
@@ -428,3 +445,17 @@ class FigureSet(Base):
     @property
     def name(self):
         return "Figure set"
+
+    def build_child(self, parent):
+        for item in self:
+            app = parent.get_new_main_window()
+            figure = item.build(app.main_frame)
+            item.update(figure)
+            sys.exit(app.exec_())
+
+    def build(self):
+        fs = FigureSetPlot()
+        self.build_child(fs)
+
+        # fw = FigureWidget(figure)
+        # self.figure_set[figure_set.id].append_child(fw.figure)

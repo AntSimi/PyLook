@@ -1,20 +1,6 @@
 from PyQt5 import QtWidgets, QtGui
 from ..figures_set import FigureSet
-
-
-class FigureWidget(QtWidgets.QWidget):
-    def __init__(self, object):
-        super().__init__()
-        self.exchange_object = object
-        self.setup_widget()
-
-    def setup_widget(self):
-        self.figure = self.exchange_object.build(self)
-        self.exchange_object.update(self.figure)
-
-    @property
-    def id(self):
-        return self.exchange_object.id
+from ..figure import FigureWidget
 
 
 class TabWidget(QtWidgets.QTabWidget):

@@ -11,6 +11,13 @@ class DataLookParser(GenericParser):
         self.add_figure_set_argument()
         self.add_figure_argument()
         self.add_subplot_argument()
+        group = self.add_argument_group("General")
+        group.add_argument(
+            "--display_tree",
+            help="Display a summary of the command",
+            action="store_true",
+        )
+
         # self.add_method_argument()
         # self.add_data_argument()
         # self.add_legend_argument()
@@ -142,4 +149,14 @@ def split_(args, pattern):
 def data_look(args=None):
     parser = DataLookParser("DataLook allow to create pylook figures with sh command")
     args = parser.parse_args(args)
-    print(args)
+
+    fs = FigureSet.with_namespace(args.figure_set_options)
+    f = Figure.with_namespace(args.figure_options)
+    s = GeoSubplot.with_namespace(args.subplot_options)
+    fs.append(f)
+    f.append(s)
+
+    if args.display_tree:
+        print(fs)
+        exit()
+    fs.build()

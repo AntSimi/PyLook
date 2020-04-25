@@ -1,4 +1,5 @@
 import logging
+from PyQt5 import QtWidgets, QtGui
 
 logger = logging.getLogger("pylook")
 
@@ -18,3 +19,17 @@ class FigureSet:
             if id_ == figure_id:
                 continue
             child.set_axes_with_message(properties)
+
+    def get_new_main_window(self):
+        app = QtWidgets.QApplication(list())
+        app.frame = QtWidgets.QMainWindow()
+        app.main_frame = QtWidgets.QWidget()
+        app.frame.setCentralWidget(app.main_frame)
+        icon = QtGui.QIcon()
+        icon.addPixmap(
+            QtGui.QPixmap(":/icons/images/geo.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off
+        )
+        app.frame.setWindowIcon(icon)
+        app.frame.resize(800, 600)
+        app.frame.show()
+        return app

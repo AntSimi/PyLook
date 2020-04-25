@@ -1,5 +1,6 @@
 import logging
 import matplotlib.figure as mfigure
+from PyQt5 import QtWidgets
 
 logger = logging.getLogger("pylook")
 
@@ -33,3 +34,18 @@ class Figure(mfigure.Figure):
         for id_, child in self.child_id.items():
             child.set_axes_with_message(properties)
         self.canvas.draw()
+
+
+class FigureWidget(QtWidgets.QWidget):
+    def __init__(self, object):
+        super().__init__()
+        self.exchange_object = object
+        self.setup_widget()
+
+    def setup_widget(self):
+        self.figure = self.exchange_object.build(self)
+        self.exchange_object.update(self.figure)
+
+    @property
+    def id(self):
+        return self.exchange_object.id
