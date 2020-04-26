@@ -447,14 +447,11 @@ class FigureSet(Base):
 
     def build_child(self, parent):
         for item in self:
-            app = parent.get_new_main_window()
-            figure = item.build(app.main_frame)
+            frame = parent.get_new_frame()
+            figure = item.build(frame)
             item.update(figure)
-            app.exec_()
+            parent.append_child(figure)
 
     def build(self):
         fs = FigureSetPlot()
         self.build_child(fs)
-
-        # fw = FigureWidget(figure)
-        # self.figure_set[figure_set.id].append_child(fw.figure)

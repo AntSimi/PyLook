@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 import re
+from PyQt5 import QtWidgets
 from .parser import GenericParser
 from .exchange_object import FigureSet, Figure, GeoSubplot, Choices
 
@@ -80,18 +81,16 @@ class DataLookParser(GenericParser):
                 continue
             match = find_parent.match(item)
             if match:
-                _, labels, parent = match.groups()
-                print("parent", item, labels, parent)
+                name, labels, parent = match.groups()
                 for label in labels.split(","):
                     self.labels[label] = parent.split(",")
-                item = argv[i] = f"--{_}[{labels}]"
+                item = argv[i] = f"--{name}[{labels}]"
             match = find_label.match(item)
             if match:
-                name, label = match.groups()
-                print("label", item, name, label)
+                name, labels = match.groups()
                 if name not in self.patterns:
                     self.patterns[name] = list()
-                self.patterns[name].append(label)
+                self.patterns[name].append(labels)
 
     def add_figure_set_argument(self):
         group = self.add_argument_group(
@@ -130,12 +129,14 @@ class DataLookParser(GenericParser):
                 options[label] = d
             setattr(args, key, options)
 
-    @staticmethod
-    def update_if_default(d_to_update, d):
+    @classmethod
+    def update_if_default(cls, d_to_update, d):
         if d is None:
             return
-        for k in d_to_update:
-            if isinstance(d_to_update[k], Default):
+        for k, v in d_to_update.items():
+            if isinstance(v, dict):
+                cls.update_if_default(v, d[k])
+            elif isinstance(v, Default):
                 d_to_update[k] = d[k]
 
     @staticmethod
@@ -278,5 +279,8 @@ def data_look(args=None):
                 )
             )
         return
+    
+    app = QtWidgets.QApplication(list())
     for fs in all_fs.values():
         fs.build()
+    app.exec_()

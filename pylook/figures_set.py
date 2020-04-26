@@ -20,16 +20,17 @@ class FigureSet:
                 continue
             child.set_axes_with_message(properties)
 
-    def get_new_main_window(self):
-        app = QtWidgets.QApplication(list())
-        app.frame = QtWidgets.QMainWindow()
-        app.main_frame = QtWidgets.QWidget()
-        app.frame.setCentralWidget(app.main_frame)
+    @staticmethod
+    def get_new_frame():
+        frame = QtWidgets.QMainWindow()
+        main_frame = QtWidgets.QWidget()
+        frame.setCentralWidget(main_frame)
         icon = QtGui.QIcon()
         icon.addPixmap(
             QtGui.QPixmap(":/icons/images/geo.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off
         )
-        app.frame.setWindowIcon(icon)
-        app.frame.resize(800, 600)
-        app.frame.show()
-        return app
+        frame.setWindowIcon(icon)
+        frame.resize(800, 600)
+        frame.show()
+        main_frame.frame = frame
+        return main_frame
