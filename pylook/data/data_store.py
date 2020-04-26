@@ -112,6 +112,32 @@ class DataStore:
                     MemoryVariable("f_depth_time", numpy.ones((10, 15)), ("t", "d")),
                 )
             )
+            self.add_dataset(
+                MemoryDataset(
+                    "time_data",
+                    MemoryVariable(
+                        "time", numpy.arange(10), ("t",), attrs=dict(units="day"),
+                    ),
+                    MemoryVariable("z", numpy.arange(5, 15), ("t",)),
+                )
+            )
+            self.add_dataset(
+                MemoryDataset(
+                    "1d_geo_data",
+                    MemoryVariable("lon", numpy.arange(20)),
+                    MemoryVariable("lat", numpy.arange(20)),
+                    MemoryVariable("z", numpy.arange(5, 25)),
+                )
+            )
+            lon, lat = numpy.meshgrid(numpy.arange(25), numpy.arange(20))
+            self.add_dataset(
+                MemoryDataset(
+                    "2d_geo_data_unregular",
+                    MemoryVariable("lon", lon),
+                    MemoryVariable("lat", lat),
+                    MemoryVariable("z", numpy.ones((20, 25))),
+                )
+            )
 
 
 class BaseDataset:
