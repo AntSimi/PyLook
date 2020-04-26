@@ -124,8 +124,8 @@ class DataStore:
             self.add_dataset(
                 MemoryDataset(
                     "1d_geo_data",
-                    MemoryVariable("lon", numpy.arange(20)),
-                    MemoryVariable("lat", numpy.arange(20)),
+                    MemoryVariable("x", numpy.arange(20)),
+                    MemoryVariable("y", numpy.arange(20)),
                     MemoryVariable("z", numpy.arange(5, 25)),
                 )
             )
@@ -133,8 +133,8 @@ class DataStore:
             self.add_dataset(
                 MemoryDataset(
                     "2d_geo_data_unregular",
-                    MemoryVariable("lon", lon),
-                    MemoryVariable("lat", lat),
+                    MemoryVariable("longitude", lon),
+                    MemoryVariable("latitude", lat),
                     MemoryVariable("z", numpy.ones((20, 25))),
                 )
             )
@@ -182,6 +182,9 @@ class BaseDataset:
     def __iter__(self):
         for child in self.children.values():
             yield child
+
+    def __getitem__(self, item):
+        return self.children[item]
 
     @staticmethod
     def repr_coordinates(values):
@@ -319,7 +322,7 @@ class BaseVariable:
         if self.depth_coordinates:
             coordinates += f"{c_depth} d: {self.depth_coordinates}"
         if self.geo_coordinates:
-            coordinates += f"{c_geo} g: {self.geo_coordinates}"
+            coordinates += f"{c_geo} g: {self.geo_coordinates} -> {self.geo_datatype}"
         return f"{self.name}{c_dim}{self.dimensions}{coordinates}{c_escape}{attrs}"
 
     @property
@@ -364,6 +367,17 @@ class BaseVariable:
     @property
     def geo_coordinates(self):
         return self.coordinates.get("geo", [None])[0]
+
+    @property
+    def geo_datatype(self):
+        g_coord = self.geo_coordinates
+        if g_coord:
+            dims_coord = {k: self.parent[v].dimensions for k, v in g_coord.items()}
+            if dims_coord["x"] != dims_coord["y"]:
+                return "2D"
+            if dims_coord["x"] == dims_coord["y"] and len(dims_coord["x"]) == 1:
+                return "1D"
+            return "2DU"
 
 
 class NetCDFDataset(BaseDataset):
