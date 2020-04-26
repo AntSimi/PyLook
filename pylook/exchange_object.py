@@ -2,7 +2,6 @@ import logging
 import uuid
 import json
 import argparse
-import sys
 from copy import deepcopy
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -91,18 +90,18 @@ class Base:
             )
 
     @classmethod
-    def with_namespace(cls, namespace):
+    def with_options(cls, options):
         obj = cls()
-        obj.update_options(obj.options, namespace)
+        obj.update_options(obj.options, options)
         return obj
 
     @classmethod
-    def update_options(cls, options, parser_options):
-        for k, v in parser_options._get_kwargs():
-            if isinstance(v, argparse.Namespace):
-                cls.update_options(options[k], v)
+    def update_options(cls, new_options, options):
+        for k, v in options.items():
+            if isinstance(v, dict):
+                cls.update_options(new_options[k], v)
             else:
-                options[k] = v
+                new_options[k] = v
 
     def copy(self):
         new = self.__new__(self.__class__)
@@ -451,7 +450,7 @@ class FigureSet(Base):
             app = parent.get_new_main_window()
             figure = item.build(app.main_frame)
             item.update(figure)
-            sys.exit(app.exec_())
+            app.exec_()
 
     def build(self):
         fs = FigureSetPlot()
