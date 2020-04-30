@@ -26,7 +26,7 @@ class GenericParser(argparse.ArgumentParser):
 
     def add_argument_group(self, group_name, *args, **kwargs):
         group = super().add_argument_group(group_name, *args, **kwargs)
-        self.groups[group_name] = group
+        self.groups[group_name.lower()] = group
         return group
 
     def parse_args(self, *args, **kwargs):

@@ -291,6 +291,9 @@ class Method(Base):
     def known_children(self):
         return [Data, Legend]
 
+    def __call__(self):
+        return self
+
 
 class Subplot(Base):
     __slot__ = tuple()
@@ -321,6 +324,8 @@ class SimpleSubplot(Subplot):
             grid=Bool(),
             zorder="0",
             title="''",
+            xlim="0,1",
+            ylim="0,1",
         )
         super().__init__(*args, **kwargs)
 
@@ -329,7 +334,7 @@ class SimpleSubplot(Subplot):
         return "Simple subplot"
 
     def build(self, figure):
-        ax = figure.add_subplot(self.get_option("position"), projection="pylook_simple")
+        ax = figure.add_subplot(self.get_option("position"), projection="standard")
         ax.id = self.id
         return ax
 
