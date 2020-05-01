@@ -84,6 +84,7 @@ class Base:
         return super().__new__(cls)
 
     def save(self, filename):
+        logger.debug(f"Object will be save in {filename}")
         with open(filename, "w") as f:
             json.dump(
                 self, f, cls=PyLookEncoder, sort_keys=True, indent=4, ensure_ascii=False
@@ -164,24 +165,32 @@ class Base:
         return []
 
     @classmethod
-    def summary_options(cls, options, compress=False):
+    def summary_options(cls, options, init_options, compress=False, only_modify=False):
         if len(options):
             elts = list()
             keys = list(options.keys())
             keys.sort()
             for k in keys:
                 v = options[k]
+                v_init = init_options[k]
                 v_dict = isinstance(v, dict)
                 if v_dict:
-                    v = cls.summary_options(v, compress).replace("\n", "\n    ")
+                    v = cls.summary_options(v, v_init, compress, only_modify)
+                    if v is None:
+                        continue
+                    v = v.replace("\n", "\n  | ")
                 if compress:
                     if v_dict:
                         elts.append(f"\n{k}: {v}\n")
                     else:
+                        if v == v_init and only_modify:
+                            continue
                         elts.append(f"{k}: {v}")
                 else:
                     elts.append(f"{k:8}: {v}")
             if compress:
+                if only_modify and len(elts) == 0:
+                    return None
                 out = "\n" + " |".join(elts).replace("\n |", "\n").replace("|\n", "\n")
                 return out.replace("\n\n", "\n")
             else:
@@ -189,20 +198,25 @@ class Base:
         else:
             return ""
 
-    def summary(self, color_bash=True, full=True, compress=False):
+    def summary(self, color_bash=True, full=True, extra_info="", **kwargs):
         summaries = list()
         for child in self:
-            summaries.append(child.summary(color_bash, full, compress))
+            summaries.append(child.summary(color_bash, full, **kwargs))
         if len(summaries):
             synthesis = "\n    " + "\n".join(summaries).replace("\n", "\n    ")
         else:
             synthesis = ""
         c = self.BASH_COLOR if color_bash else ""
         c_escape = "\033[0;0m" if color_bash else ""
-        options = self.summary_options(self.options, compress).replace(
-            "\n", "\n        "
+        options = self.summary_options(
+            self.options, self.copy_options(self.init_value), **kwargs
         )
+        if options is None:
+            options = ""
+        else:
+            options = options.replace("\n", "\n      | ")
         sup = f" ({self.id})" if full else ""
+        sup += extra_info
         return f"{c}{self.__class__.__name__}{sup}{c_escape}{options}{synthesis}"
 
     @property
