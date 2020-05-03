@@ -48,11 +48,12 @@ class Base:
     def set_options(self, **kwargs):
         self.options.update(kwargs)
 
-    # def __call__(self, *args, **kwargs):
-    #     return self
-
     def exchange_object(self):
-        return Method.with_options(self.options)
+        obj = Method()
+        obj.update_options(obj.init_value, self.options)
+        obj.start_current_value()
+        obj.target = self.name
+        return obj
 
 
 class Pcolormesh(Base):
