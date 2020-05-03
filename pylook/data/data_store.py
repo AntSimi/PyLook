@@ -1,6 +1,7 @@
 import netCDF4
 import numpy
 import os.path
+from ..method import Base
 
 
 def handler_access(method):
@@ -57,6 +58,11 @@ class DataStore:
         def __iter__(self):
             for elt in self.store.values():
                 yield elt
+
+        def get(self, key):
+            if key not in self.store:
+                self.add_path(key)
+            return self.store[key]
 
         def add_path(self, filename):
             new = NetCDFDataset(filename)
@@ -128,6 +134,16 @@ class DataStore:
                     MemoryVariable("y", numpy.arange(20)),
                     MemoryVariable("z", numpy.arange(5, 25)),
                 )
+            )            
+            self.add_dataset(
+                MemoryDataset(
+                    "two_coordinates_system",
+                    MemoryVariable("x", numpy.arange(20)),
+                    MemoryVariable("lon", numpy.arange(20)),
+                    MemoryVariable("y", numpy.arange(20)),
+                    MemoryVariable("lat", numpy.arange(20)),
+                    MemoryVariable("z", numpy.arange(5, 25)),
+                )
             )
             lon, lat = numpy.meshgrid(numpy.arange(25), numpy.arange(20))
             self.add_dataset(
@@ -189,6 +205,11 @@ class BaseDataset:
     @staticmethod
     def repr_coordinates(values):
         return {",".join(k): v for k, v in values.items()}
+
+    def first_geo_variable(self):
+        for child in self.children.values():
+            if child.geo_coordinates:
+                return child
 
     def summary(self, color_bash=False, full=False, child=True):
         if child:
@@ -374,10 +395,10 @@ class BaseVariable:
         if g_coord:
             dims_coord = {k: self.parent[v].dimensions for k, v in g_coord.items()}
             if dims_coord["x"] != dims_coord["y"]:
-                return "2D"
+                return Base.DATA_LEVEL["2D"]
             if dims_coord["x"] == dims_coord["y"] and len(dims_coord["x"]) == 1:
-                return "1D"
-            return "2DU"
+                return Base.DATA_LEVEL["1D"]
+            return Base.DATA_LEVEL["2DU"]
 
 
 class NetCDFDataset(BaseDataset):

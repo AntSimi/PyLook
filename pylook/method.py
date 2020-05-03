@@ -101,3 +101,12 @@ KNOWN_METHOD = dict()
 for cls in Pcolormesh, Scatter, Pcolor:
     m = cls()
     KNOWN_METHOD[m.name] = m
+
+
+def best_geo_method(geo_datatype):
+    return {
+        Base.DATA_LEVEL["1D"]: Scatter,
+        Base.DATA_LEVEL["2DU"]: Scatter,
+        Base.DATA_LEVEL["2D"]: Pcolormesh,
+    }[geo_datatype]
+
