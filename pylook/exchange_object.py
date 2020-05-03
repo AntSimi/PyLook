@@ -58,6 +58,10 @@ class FBool(Bool):
         self.default = self[1]
 
 
+class Option(dict):
+    pass
+
+
 class Base:
     __slot__ = (
         "current_value",
@@ -68,9 +72,22 @@ class Base:
         "building_options",
     )
 
-    COLOR = Choices(
-        "'None'", "'r'", "'b'", "'y'", "'g'", "'k'", "'c'", "'w'", "'olive'"
+    COLORS = ("'r'", "'b'", "'y'", "'g'", "'k'", "'c'", "'w'", "'olive'")
+    COLOR = Choices("'None'", *COLORS)
+    COLOR_K = Choices("'k'", *COLORS)
+    FONTSIZE = Choices(
+        "None",
+        "'xx-small'",
+        "'x-small'",
+        "'small'",
+        "'medium'",
+        "'large'",
+        "'x-large'",
+        "'xx-large'",
     )
+    FONTNAME = Choices("'monospace'", "'serif'", "'fantasy'",)
+    FONTWEIGHT = Choices("'normal'", "'bold'", "'heavy'", "'light'")
+    FONTSTYLE = Choices("'normal'", "'italic'")
     LINESTYLE = Choices("'-'", "'--'", "'-.'")
 
     def __init__(self):
@@ -191,7 +208,7 @@ class Base:
             if compress:
                 if only_modify and len(elts) == 0:
                     return None
-                out = "\n" + " |".join(elts).replace("\n |", "\n").replace("|\n", "\n")
+                out = "\n" + " /".join(elts).replace("\n /", "\n").replace("/\n", "\n")
                 return out.replace("\n\n", "\n")
             else:
                 return "\n" + "\n".join(elts)
@@ -242,26 +259,41 @@ class Base:
         if set_func is None and hasattr(item, "has_") and item.has_(k):
             set_func, get_func = lambda value: item.set_(k, value), lambda: item.get_(k)
         if set_func is None or get_func is None:
-            logger.debug(
+            logger.warning(
                 f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist {k}"
             )
             return None, None
         return set_func, get_func
 
-    def apply_options(self, item, options):
+    def apply_options(self, item, options, init_options):
         for k, v in options.items():
-            if isinstance(v, dict):
-                self.apply_options(item, v)
+            v_ = init_options[k]
+            is_option = isinstance(v_, Option)
+            if isinstance(v, dict) and not is_option:
+                self.apply_options(item, v, v_)
                 continue
             set_func, get_func = self.get_set(item, k)
             if set_func is None:
                 continue
-            new_value = eval(v)
+            new_value = self.effective_value(v)
             if get_func() != new_value:
-                set_func(new_value)
+                if is_option:
+                    set_func(**new_value)
+                else:
+                    set_func(new_value)
+
+    @classmethod
+    def effective_value(cls, value):
+        if isinstance(value, dict):
+            out = dict()
+            for k, v in value.items():
+                out[k] = cls.effective_value(v)
+            return out
+        else:
+            return eval(value)
 
     def update(self, item, recursive=True):
-        self.apply_options(item, self.options)
+        self.apply_options(item, self.options, self.init_value)
         if recursive:
             for child in self:
                 if child.id not in item.child_id:
@@ -360,7 +392,16 @@ class GeoSubplot(Subplot):
         self.init_value = dict(
             position="111",
             ylabel="''",
-            xlabel="''",
+            xlabel=Option(
+                xlabel="''",
+                fontdict=dict(
+                    fontsize=self.FONTSIZE,
+                    color=self.COLOR_K,
+                    family=self.FONTNAME,
+                    weight=self.FONTWEIGHT,
+                    style=self.FONTSTYLE,
+                ),
+            ),
             grid=Bool(),
             zorder="0",
             title="''",
