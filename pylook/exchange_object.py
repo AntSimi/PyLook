@@ -300,6 +300,16 @@ class Base:
                     self.build_child(item, [child.id])
                 child.update(item.child_id[child.id], recursive=recursive)
 
+    @classmethod
+    def fontdict(cls):
+        return dict(
+            fontsize=cls.FONTSIZE,
+            color=cls.COLOR_K,
+            family=cls.FONTNAME,
+            weight=cls.FONTWEIGHT,
+            style=cls.FONTSTYLE,
+        )
+
 
 class Data(Base):
     __slot__ = tuple()
@@ -391,20 +401,11 @@ class GeoSubplot(Subplot):
     def __init__(self, *args, **kwargs):
         self.init_value = dict(
             position="111",
-            ylabel="''",
-            xlabel=Option(
-                xlabel="''",
-                fontdict=dict(
-                    fontsize=self.FONTSIZE,
-                    color=self.COLOR_K,
-                    family=self.FONTNAME,
-                    weight=self.FONTWEIGHT,
-                    style=self.FONTSTYLE,
-                ),
-            ),
+            ylabel=Option(ylabel="''", fontdict=self.fontdict()),
+            xlabel=Option(xlabel="''", fontdict=self.fontdict()),
             grid=Bool(),
             zorder="0",
-            title="''",
+            title=Option(label="''", fontdict=self.fontdict()),
             geo=dict(
                 coast=dict(
                     coast=Bool(),
