@@ -43,6 +43,7 @@ def start_logger():
     TRACE = 5
     logging.addLevelName(TRACE, "TRACE")
     logger = logging.getLogger("pylook")
+    logger.TRACE = TRACE
     logger.addHandler(PyLookHandler())
     logger.trace = (
         lambda msg, *args, **kwargs: logger._log(TRACE, msg, args, **kwargs)
