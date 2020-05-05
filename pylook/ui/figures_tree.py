@@ -1,15 +1,8 @@
 import logging
 import json
 from PyQt5 import QtWidgets, QtGui, QtCore
-from ..exchange_object import (
-    FigureSet,
-    Figure,
-    GeoSubplot,
-    Base as BaseObject,
-    Bool,
-    Choices,
-    as_pylook_object,
-)
+from ..pylook_object.base import Base as BaseObject, Bool, Choices, as_pylook_object
+from ..pylook_object.plot_object import FigureSet, Figure, GeoSubplot
 
 logger = logging.getLogger("pylook")
 

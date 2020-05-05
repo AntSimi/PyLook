@@ -2,18 +2,13 @@ import argparse
 import logging
 import sys
 import re
+import copy
 from PyQt5 import QtWidgets
 from .parser import GenericParser
-from .exchange_object import (
-    FigureSet,
-    Figure,
-    SimpleSubplot,
-    GeoSubplot,
-    Choices,
-    Method,
-    Legend,
-)
-from .method import KNOWN_METHOD
+from .pylook_object.base import Choices
+from .pylook_object.plot_object import FigureSet, Figure, SimpleSubplot, GeoSubplot
+from .pylook_object.method import KNOWN_METHOD, best_geo_method, Method, Legend, Data
+from .data.data_store import DataStore
 
 
 logger = logging.getLogger("pylook")
@@ -21,10 +16,10 @@ logger = logging.getLogger("pylook")
 
 def default_populate(x, *args, **kwargs):
     x = x()
-    return dict(options=x.options, help_options=x.help)
+    return dict(options=x.init_value, help_options=x.help)
 
 
-def derivative_populate(x, namespace, label, default=None):
+def subplot_populate(x, namespace, label):
     x_types = getattr(namespace, x)
     if isinstance(x_types, dict):
         if label in x_types:
@@ -33,6 +28,36 @@ def derivative_populate(x, namespace, label, default=None):
             return default_populate(x_types[":"])
     else:
         return default_populate(x_types)
+
+
+def method_populate(x, namespace, label):
+    method = getattr(namespace, "method")
+    if method is None:
+        data = getattr(namespace, "data")
+        if isinstance(data, dict):
+            if label in data:
+                filenames = data[label]
+            else:
+                filenames = data[":"]
+        else:
+            filenames = data
+        if filenames is None:
+            return
+        dataset = DataStore().get(filenames[0])
+        variable = getattr(namespace, "variable")
+        if variable is None:
+            variable = dataset.first_geo_variable()
+        else:
+            variable = dataset[variable[0]]
+        namespace.method = best_geo_method(variable.geo_datatype)().exchange_object()
+        return default_populate(namespace.method)
+
+    else:
+        if isinstance(method, dict):
+            if label in method:
+                return default_populate(method[label])
+        else:
+            return default_populate(method)
 
 
 class PyLookArgumentGroup(argparse._ArgumentGroup):
@@ -47,18 +72,27 @@ class PyLookArgumentGroup(argparse._ArgumentGroup):
         dest = self._get_optional_kwargs(*args, **kwargs)["dest"]
         if isinstance(kwargs.get("help"), dict):
             kwargs["help"] = f"Could be : {', '.join(kwargs['help'].keys())}"
-
         patterns = set()
         for arg in args:
             patterns = patterns.union(self.patterns.get(arg.replace("-", ""), set()))
         if patterns:
             for pattern in patterns:
                 kwargs = kwargs.copy()
+                if isinstance(obj, str):
+                    kwargs[
+                        "help"
+                    ] = f"Help couldn't be give without {obj} choose, after choose wrote {args[0]}[{pattern}] help "
                 kwargs["dest"] = f"{dest}.{pattern}"
-                super().add_argument(*(f"{arg}[{pattern}]" for arg in args), **kwargs)
+                action = super().add_argument(
+                    *(f"{arg}[{pattern}]" for arg in args), **kwargs
+                )
                 if obj is not None:
                     self.known_subparser[kwargs["dest"]] = obj, populate
         else:
+            if isinstance(obj, str):
+                kwargs[
+                    "help"
+                ] = f"Help couldn't be give without {obj} choose, after choose wrote {args[0]} help "
             super().add_argument(*args, **kwargs)
             if obj is not None:
                 self.known_subparser[dest] = obj, populate
@@ -91,6 +125,7 @@ class DataLookParser(GenericParser):
             help="Display a summary of the command",
             action="store_true",
         )
+        group.add_argument("--save_tree", help="Save command in json")
 
     def add_argument_group(self, *args, **kwargs):
         title = kwargs.get("title", args[0])
@@ -102,6 +137,8 @@ class DataLookParser(GenericParser):
         return group
 
     def find_pattern(self, argv):
+        """Found label in arguments
+        """
         find_parent = re.compile(
             "--([a-z_]*)\[([a-zA-Z0-9_,:]*)\,parent=([a-zA-Z0-9_:,]*)]"
         )
@@ -155,7 +192,7 @@ class DataLookParser(GenericParser):
             "--subplot_options",
             nargs="*",
             obj="subplot",
-            populate_kwargs=derivative_populate,
+            populate_kwargs=subplot_populate,
         )
 
     @classmethod
@@ -175,41 +212,50 @@ class DataLookParser(GenericParser):
         group = self.add_argument_group(
             "Data/Method", description="Options to display data"
         )
-        group.add_argument("--variable", "--var")
+        group.add_argument("--variable", "--var", nargs="*")
         group.add_argument("--data_index", nargs="*")
         group.add_argument("--data", nargs="*")
         group.add_argument("--method", type=self.method_object, help=KNOWN_METHOD)
-        group.add_argument("--legends", nargs="*", type=self.legend_object)
+        # group.add_argument("--legends", nargs="*", type=self.legend_object)
         group.add_argument(
-            "--method_options",
-            nargs="*",
-            obj="method",
-            populate_kwargs=derivative_populate,
+            "--method_options", nargs="*", obj="", populate_kwargs=method_populate,
         )
         # group.add_argument(
         #     "--legend_options", nargs="*", obj="legends", populate_kwargs=None
         # )
 
+    def data_check(self, namespace):
+        if namespace.data is None and namespace.filenames:
+            namespace.data = namespace.filenames
+        elif isinstance(namespace.data, MultiItems) and ":" not in namespace.data:
+            if namespace.filenames:
+                namespace.data[":"] = namespace.filenames
+            else:
+                namespace.data[":"] = None
+
     def parse_args(self, *args, **kwargs):
         args = super().parse_args(*args, **kwargs)
         self.merge_target(args)
-        print(args)
+        self.data_check(args)
         for name, (obj, populate_kwargs) in self.known_subparser.items():
             sub_args = getattr(args, name)
             sub_args = [
                 f"--{item}" for item in (tuple() if sub_args is None else sub_args)
             ]
-
             label = name.split(".")[1] if len(name.split(".")) > 1 else None
             logger.trace(f"Software will parse {name} keywords")
             kwargs_parser = populate_kwargs(obj, args, label)
-            setattr(args, name, SubParser(**kwargs_parser).parse_args(sub_args))
+            if kwargs_parser is None:
+                pass
+            else:
+                setattr(args, name, SubParser(**kwargs_parser).parse_args(sub_args))
+            logger.trace(f"{name} = {getattr(args,name)}")
         self.merge_options(args)
         return args
 
     def merge_target(self, args):
         for key, pattern in self.patterns.items():
-            if key not in ("method", "subplot"):
+            if key not in ("method", "subplot", "data"):
                 continue
             options = MultiItems()
             for label in pattern:
@@ -225,15 +271,17 @@ class DataLookParser(GenericParser):
 
     def merge_options(self, args):
         for key, pattern in self.patterns.items():
-            if key in ("method", "subplot"):
+            if key in ("method", "subplot", "data"):
                 continue
             options = MultiItems()
             for label in self.get_labels(pattern):
-                d = getattr(args, f"{key}.{label}", None)
+                logger.trace(f"{key}.{label} will be merge")
+                default = getattr(args, f"{key}.:", None)
+                d = getattr(args, f"{key}.{label}", copy.deepcopy(default))
                 for k in pattern:
                     if "," in k and label in k:
                         self.update_if_default(d, getattr(args, f"{key}.{k}", None))
-                self.update_if_default(d, getattr(args, f"{key}.:", None))
+                self.update_if_default(d, default)
                 options[label] = d
             setattr(args, key, options)
 
@@ -355,6 +403,8 @@ def split_(args, pattern):
 
 
 def build_items(cls, options):
+    if options is None:
+        return dict()
     keys = list()
     if isinstance(options, MultiItems):
         keys.extend(options.keys())
@@ -372,7 +422,7 @@ def build_items(cls, options):
             )
             items[key] = class_.with_options(options_)
         return items
-    return dict(noname=cls.with_options(options))
+    return {":": cls.with_options(options)}
 
 
 def distribute_child(childs, parents, labels):
@@ -389,6 +439,57 @@ def distribute_child(childs, parents, labels):
                 parents[parent_name].append(child)
 
 
+def get_labels(items):
+    labels_ = list()
+    if items is None:
+        return [":"]
+    if isinstance(items, dict):
+        labels_.extend(items.keys())
+    else:
+        labels_.append(":")
+    return labels_
+
+
+def merge_labels(methods, datas, variables):
+    labels = list()
+    labels.extend(get_labels(methods))
+    labels.extend(get_labels(datas))
+    labels.extend(get_labels(variables))
+    labels = set(labels)
+    if ":" in labels and len(labels) > 1:
+        labels.remove(":")
+    return set(labels)
+
+
+def get_item(label, items):
+    if not isinstance(items, dict):
+        return items
+    if label not in items:
+        return items[":"]
+    return items[label]
+
+
+def add_data(methods, datas, variables):
+    datastore = DataStore()
+    labels = merge_labels(methods, datas, variables)
+    print(labels)
+    for label in labels:
+        methods[label] = get_item(label, methods).copy()
+        m = methods[label].renderer_class
+        d = Data()
+        d.data.update(m.data_structure())
+        datas_ = get_item(label, datas)
+        for data in datas_:
+            dataset = datastore.get(data)
+            variable = dataset.first_geo_variable()
+            d.data["x"].append((variable.geo_coordinates["x"], dataset.key))
+            d.data["y"].append((variable.geo_coordinates["y"], dataset.key))
+            d.data["z"].append((variable.name, dataset.key))
+        methods[label].append(d)
+    if len(labels) > 1 and ":" in methods:
+        methods.pop(":")
+
+
 def data_look(args=None):
     parser = DataLookParser(
         "DataLook allow to create pylook figures with sh command", argv=args
@@ -398,14 +499,21 @@ def data_look(args=None):
     all_f = build_items(Figure, args.figure_options)
     all_s = build_items(args.subplot, args.subplot_options)
     all_m = build_items(args.method, args.method_options)
+    add_data(all_m, args.data, args.variable)
     distribute_child(all_m, all_s, parser.labels)
     distribute_child(all_s, all_f, parser.labels)
     distribute_child(all_f, all_fs, parser.labels)
 
     if args.display_tree:
-        level = logger.getEffectiveLevel() <= logging.DEBUG
+        level = logger.getEffectiveLevel()
+        simplify = False if level <= logging.DEBUG else True
+        compress = False if level <= logger.TRACE else True
         for fs in all_fs.values():
-            print(fs.summary(compress=False if level else True))
+            print(fs.summary(compress=compress, only_modify=simplify))
+        return
+
+    if args.save_tree is not None:
+        all_fs["noname"].save(args.save_tree)
         return
 
     app = QtWidgets.QApplication(list())

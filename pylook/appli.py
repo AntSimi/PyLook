@@ -3,7 +3,7 @@ import sys
 import logging
 from .ui.pylook import Ui_MainWindow
 from .data.data_store import DataStore
-from .exchange_object import FigureSet
+from .pylook_object.plot_object import FigureSet
 from .parser import GenericParser
 
 

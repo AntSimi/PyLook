@@ -1,7 +1,7 @@
 import netCDF4
 import numpy
 import os.path
-from ..method import Base
+from . import DATA_LEVEL
 
 
 def handler_access(method):
@@ -47,6 +47,9 @@ class DataStore:
 
     def __iter__(self):
         return self.instance.__iter__()
+
+    def __getitem__(self, key):
+        return self.instance.get(key)
 
     class __DataStore:
 
@@ -134,7 +137,7 @@ class DataStore:
                     MemoryVariable("y", numpy.arange(20)),
                     MemoryVariable("z", numpy.arange(5, 25)),
                 )
-            )            
+            )
             self.add_dataset(
                 MemoryDataset(
                     "two_coordinates_system",
@@ -395,10 +398,16 @@ class BaseVariable:
         if g_coord:
             dims_coord = {k: self.parent[v].dimensions for k, v in g_coord.items()}
             if dims_coord["x"] != dims_coord["y"]:
-                return Base.DATA_LEVEL["2D"]
+                return DATA_LEVEL["2D"]
             if dims_coord["x"] == dims_coord["y"] and len(dims_coord["x"]) == 1:
-                return Base.DATA_LEVEL["1D"]
-            return Base.DATA_LEVEL["2DU"]
+                return DATA_LEVEL["1D"]
+            return DATA_LEVEL["2DU"]
+
+    def get_data(self, **indexs):
+        return Exception("Must be define")
+
+    def __getitem__(self, selection):
+        return self.get_data()[selection]
 
 
 class NetCDFDataset(BaseDataset):
@@ -453,6 +462,10 @@ class NetCDFVariable(BaseVariable):
     @property
     def dimensions(self):
         return self.attrs["__dimensions"]
+
+    @child_access
+    def get_data(self, **indexs):
+        return self.handler[:]
 
 
 class MemoryDataset(BaseDataset):

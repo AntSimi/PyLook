@@ -19,6 +19,7 @@ class PyLookAxes(matplotlib.axes.Axes):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.callback_axes_properties = None
+        self.child_id = dict()
 
     def set_callback_axes_properties(self, callback):
         self.callback_axes_properties = callback
@@ -161,6 +162,10 @@ class MapAxes(PyLookAxes):
         super().end_pan(*args, **kwargs)
         self.update_env()
         self.emit_axes_properties()
+
+    @property
+    def coordinates_bbox(self):
+        raise Exception('Must be define')
 
     def emit_axes_properties(self):
         kwargs = dict()
