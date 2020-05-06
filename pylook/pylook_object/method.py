@@ -1,6 +1,9 @@
 import numpy
 import matplotlib.markers as mmarkers
-from .base import Base, Choices
+import matplotlib.cm as mcm
+import matplotlib.collections as mcollections
+import copy
+from .base import Base, Choices, Option
 from ..data import DATA_LEVEL
 from ..data.data_store import DataStore
 
@@ -72,8 +75,10 @@ class MethodLegend(Base):
         return super().summary(*args, **kwargs)
 
     def with_options(self, options):
-        new = super().with_options(options)
+        new = self.__class__()
         new.init_value = self.init_value
+        new.start_current_value()
+        new.update_options(new.options, options)
         new.target = self.target
         return new
 
@@ -154,8 +159,9 @@ class BaseMethod(BaseMethodLegend):
         "data_need",
         "legend_available",
     )
-
+    FILLED_MARKERS = Choices(*[f"'{i}'" for i in mmarkers.MarkerStyle.filled_markers])
     MARKERS = Choices(*[f"'{i}'" for i in mmarkers.MarkerStyle.markers.keys()])
+    CMAP = Choices(*[f"'{i}'" for i in mcm.cmap_d.keys()], default="'viridis'")
 
     def __init__(self):
         self.legend_available = list()
@@ -174,7 +180,7 @@ class BaseMethod(BaseMethodLegend):
 
     def exchange_object(self):
         obj = Method()
-        obj.update_options(obj.init_value, self.options)
+        obj.init_value = copy.deepcopy(self.options)
         obj.start_current_value()
         obj.target = self.name
         return obj
@@ -219,6 +225,23 @@ class Pcolor(BaseMethod):
         ax.pcolor(*args, **kwargs)
 
 
+class ScatterCollection(mcollections.PathCollection):
+    def set_size(self, size):
+        return super().set_sizes((size,))
+
+    def get_size(self):
+        return super().get_sizes()[0]
+
+    def set_marker(self, marker):
+        self.marker_plk = marker
+        marker_obj = mmarkers.MarkerStyle(marker)
+        path = marker_obj.get_path().transformed(marker_obj.get_transform())
+        self.set_paths((path,))
+
+    def get_marker(self):
+        return getattr(self, 'marker_plk', None)
+
+
 class Scatter(BaseMethod):
     __slots__ = tuple()
 
@@ -226,11 +249,28 @@ class Scatter(BaseMethod):
         self.name = "scatter_plk"
         self.enable_datas("1D")
         self.needs(x="", y="", z="")
-        self.set_options(vmin="None", vmax="None", cmap="'jet'", s="20")
+        self.set_options(
+            clim=Option(vmin="None", vmax="None"),
+            cmap=self.CMAP,
+            size="20",
+            label="''",
+            zorder="100",
+            alpha="1",
+            linewidths="0",
+            edgecolors=Base.COLOR_K,
+            marker=self.FILLED_MARKERS,
+        )
 
     @staticmethod
     def func(ax, data, **kwargs):
-        ax.scatter(*args, **kwargs)
+        # return ScatterCollection(
+        #     edge=ax.scatter(data["x"], data["y"], **kwargs),
+        #     color=ax.scatter(data["x"], data["y"], c=data["z"], **kwargs),
+        # )
+        m = ax.scatter(data["x"], data["y"], c=data["z"], **kwargs)
+        m.__class__ = ScatterCollection
+        print(m)
+        return m
 
 
 class Plot(BaseMethod):
@@ -242,9 +282,12 @@ class Plot(BaseMethod):
         self.needs(x="", y="", z="")
         self.set_options(
             linestyle=Base.LINESTYLE,
+            linewidth="1",
+            label="''",
             marker=self.MARKERS,
             markersize="1",
             color=Base.COLOR_K,
+            zorder="110",
         )
 
     @staticmethod
