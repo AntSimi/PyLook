@@ -10,7 +10,7 @@ Welcome to pylook's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   auto_examples/index
+   python_module/index
 
 Indices and tables
 ==================

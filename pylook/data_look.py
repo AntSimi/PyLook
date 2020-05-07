@@ -126,6 +126,7 @@ class DataLookParser(GenericParser):
             action="store_true",
         )
         group.add_argument("--save_tree", help="Save command in json")
+        group.add_argument("--gallery", help=argparse.SUPPRESS, action="store_true")
 
     def add_argument_group(self, *args, **kwargs):
         title = kwargs.get("title", args[0])
@@ -472,7 +473,6 @@ def get_item(label, items):
 def add_data(methods, datas, variables):
     datastore = DataStore()
     labels = merge_labels(methods, datas, variables)
-    print(labels)
     for label in labels:
         methods[label] = get_item(label, methods).copy()
         m = methods[label].renderer_class
@@ -514,6 +514,11 @@ def data_look(args=None):
 
     if args.save_tree is not None:
         all_fs["noname"].save(args.save_tree)
+        return
+
+    if args.gallery:
+        for fs in all_fs.values():
+            fs.build(pyqt=False)
         return
 
     app = QtWidgets.QApplication(list())

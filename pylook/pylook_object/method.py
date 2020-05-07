@@ -239,7 +239,7 @@ class ScatterCollection(mcollections.PathCollection):
         self.set_paths((path,))
 
     def get_marker(self):
-        return getattr(self, 'marker_plk', None)
+        return getattr(self, "marker_plk", None)
 
 
 class Scatter(BaseMethod):
@@ -263,13 +263,8 @@ class Scatter(BaseMethod):
 
     @staticmethod
     def func(ax, data, **kwargs):
-        # return ScatterCollection(
-        #     edge=ax.scatter(data["x"], data["y"], **kwargs),
-        #     color=ax.scatter(data["x"], data["y"], c=data["z"], **kwargs),
-        # )
         m = ax.scatter(data["x"], data["y"], c=data["z"], **kwargs)
         m.__class__ = ScatterCollection
-        print(m)
         return m
 
 

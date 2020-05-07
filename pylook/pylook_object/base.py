@@ -40,6 +40,10 @@ class Choices(list):
             return ", ".join(self[:6]) + ", ..."
         return ", ".join(self)
 
+    @classmethod
+    def from_generator(cls, generator, default=None):
+        pass
+
 
 class Bool(Choices):
     def __init__(self):
@@ -171,6 +175,10 @@ class Base:
     def __str__(self):
         return self.summary(full=False, compress=True)
 
+    def _repr_html_(self):
+        text = self.summary(full=False, color_bash=False, html=True)
+        return f'<pre>{text}</pre>'
+
     @property
     def known_children(self):
         return []
@@ -209,7 +217,7 @@ class Base:
         else:
             return ""
 
-    def summary(self, color_bash=True, full=True, extra_info="", **kwargs):
+    def summary(self, color_bash=True, full=True, extra_info="", html=True, **kwargs):
         summaries = list()
         for child in self:
             summaries.append(child.summary(color_bash, full, **kwargs))
@@ -217,8 +225,14 @@ class Base:
             synthesis = "\n    " + "\n".join(summaries).replace("\n", "\n    ")
         else:
             synthesis = ""
-        c = self.BASH_COLOR if color_bash else ""
-        c_escape = "\033[0;0m" if color_bash else ""
+        if color_bash:
+            c = self.BASH_COLOR
+            c_escape = "\033[0;0m"
+        elif html:
+            c = f'<span style="color:{self.QT_COLOR}";>'
+            c_escape = '</span>'
+        else:
+            c = c_escape = ""
         options = self.summary_options(
             self.options, self.copy_options(self.init_value), **kwargs
         )
@@ -271,7 +285,7 @@ class Base:
                 continue
             new_value = self.effective_value(v)
             if get_func() != new_value:
-                logger.trace(f'We will set {k} with {v} on {item}')
+                logger.trace(f"We will set {k} with {v} on {item}")
                 if is_option:
                     set_func(**new_value)
                 else:
@@ -304,5 +318,3 @@ class Base:
             weight=cls.FONTWEIGHT,
             style=cls.FONTSTYLE,
         )
-
-

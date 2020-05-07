@@ -3,7 +3,6 @@ import numpy
 import os.path
 from . import DATA_LEVEL
 
-
 def handler_access(method):
     def wrapped(self, *args, **kwargs):
         flag = self.open()
@@ -157,6 +156,8 @@ class DataStore:
                     MemoryVariable("z", numpy.ones((20, 25))),
                 )
             )
+            from .demo_dataset import fake_sat
+            self.add_dataset(fake_sat())
 
 
 class BaseDataset:
@@ -506,6 +507,9 @@ class MemoryVariable(BaseVariable):
     @property
     def dimensions(self):
         return self.attrs["__dimensions"]
+
+    def get_data(self, **indexs):
+        return self.value
 
 
 class ZarrDataset(BaseDataset):

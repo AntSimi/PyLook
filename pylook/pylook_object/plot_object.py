@@ -125,14 +125,18 @@ class Figure(Base):
     def name(self):
         return "Figure"
 
-    def build(self, widget):
-        fig = FigurePlot()
-        fig.canvas = FigureCanvasQTAgg(fig)
-        fig.toolbar = NavigationToolbar2QT(fig.canvas, widget)
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(fig.canvas)
-        vbox.addWidget(fig.toolbar)
-        widget.setLayout(vbox)
+    def build(self, widget=None, pyqt=True):
+        if pyqt:
+            fig = FigurePlot()
+            fig.canvas = FigureCanvasQTAgg(fig)
+            fig.toolbar = NavigationToolbar2QT(fig.canvas, widget)
+            vbox = QtWidgets.QVBoxLayout()
+            vbox.addWidget(fig.canvas)
+            vbox.addWidget(fig.toolbar)
+            widget.setLayout(vbox)
+        else:
+            from matplotlib import pyplot as plt
+            fig = plt.figure(FigureClass=FigurePlot)
         self.build_child(fig)
         for child in fig.child_id.values():
             child.set_callback_axes_properties(fig.axes_properties_message)
@@ -170,13 +174,17 @@ class FigureSet(Base):
     def name(self):
         return "Figure set"
 
-    def build_child(self, parent):
+    def build_child(self, parent, pyqt=True):
         for item in self:
-            frame = parent.get_new_frame()
-            figure = item.build(frame)
+            if pyqt:
+                frame = parent.get_new_frame()
+                figure = item.build(frame)
+            else:
+                figure = item.build(pyqt=pyqt)
             item.update(figure)
             parent.append_child(figure)
 
-    def build(self):
+    def build(self, pyqt=True):
         fs = FigureSetPlot()
-        self.build_child(fs)
+        self.build_child(fs, pyqt)
+        return fs
