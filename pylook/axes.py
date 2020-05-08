@@ -69,7 +69,7 @@ class MapAxes(PyLookAxes):
         for geo in self.GEO_ELT:
             self.geo_flag[geo] = kwargs.pop(geo, self.default[geo]["flag"])
             self._geo_object[geo] = dict()
-            self.geo_kwargs[geo] = dict()
+            self.geo_kwargs[geo] = dict(linewidth=.25, color='k')
             self.geo_mappable[geo] = None
         super().__init__(*args, **kwargs)
 
