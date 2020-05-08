@@ -3,7 +3,6 @@ import logging
 import sys
 import re
 import copy
-from PyQt5 import QtWidgets
 from .parser import GenericParser
 from .pylook_object.base import Choices
 from .pylook_object.plot_object import FigureSet, Figure, SimpleSubplot, GeoSubplot
@@ -521,6 +520,7 @@ def data_look(args=None):
             fs.build(pyqt=False)
         return
 
+    from PyQt5 import QtWidgets
     app = QtWidgets.QApplication(list())
     for fs in all_fs.values():
         fs.build()

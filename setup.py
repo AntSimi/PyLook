@@ -16,9 +16,7 @@ setup(
         "netCDF4",
         "pyproj",
         "numba",
-        "zarr",
-        "PyQt5-sip",
-        "PyQt5",
+        "zarr"
     ],
     python_requires=f'>={".".join(str(i) for i in min_version)}',
     package_data={"pylook": ["gshhs_backup/*.nc"]},
