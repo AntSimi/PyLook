@@ -1,5 +1,4 @@
 import logging
-from PyQt5 import QtWidgets, QtGui
 
 logger = logging.getLogger("pylook")
 
@@ -22,6 +21,7 @@ class FigureSet:
 
     @staticmethod
     def get_new_frame():
+        from PyQt5 import QtWidgets, QtGui
         frame = QtWidgets.QMainWindow()
         main_frame = QtWidgets.QWidget()
         frame.setCentralWidget(main_frame)
