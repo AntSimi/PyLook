@@ -2,8 +2,6 @@ import logging
 import uuid
 import json
 from copy import deepcopy
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from ..figure import Figure as FigurePlot
 from ..figures_set import FigureSet as FigureSetPlot
 from .base import Base, Choices, Option, Bool, FBool
@@ -127,6 +125,8 @@ class Figure(Base):
     def build(self, widget=None, pyqt=True):
         if pyqt:
             from PyQt5 import QtWidgets
+            from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+            from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
             fig = FigurePlot()
             fig.canvas = FigureCanvasQTAgg(fig)
             fig.toolbar = NavigationToolbar2QT(fig.canvas, widget)
