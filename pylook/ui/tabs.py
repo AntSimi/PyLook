@@ -3,6 +3,21 @@ from ..figures_set import FigureSet
 from ..figure import FigureWidget
 
 
+class FigureWidget(QtWidgets.QWidget):
+    def __init__(self, object):
+        super().__init__()
+        self.exchange_object = object
+        self.setup_widget()
+
+    def setup_widget(self):
+        self.figure = self.exchange_object.build(self)
+        self.exchange_object.update(self.figure)
+
+    @property
+    def id(self):
+        return self.exchange_object.id
+
+
 class TabWidget(QtWidgets.QTabWidget):
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent=None, *args, **kwargs)
