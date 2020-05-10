@@ -3,11 +3,11 @@ import logging
 import sys
 import re
 import copy
-from .parser import GenericParser
-from .pylook_object.base import Choices
-from .pylook_object.plot_object import FigureSet, Figure, SimpleSubplot, GeoSubplot
-from .pylook_object.method import KNOWN_METHOD, best_geo_method, Method, Legend, Data
-from .data.data_store import DataStore
+from ..parser import GenericParser
+from ..pylook_object.base import Choices
+from ..pylook_object.plot_object import FigureSet, Figure, SimpleSubplot, GeoSubplot
+from ..pylook_object.method import KNOWN_METHOD, best_geo_method, Method, Legend, Data
+from ..data.data_store import DataStore
 
 
 logger = logging.getLogger("pylook")

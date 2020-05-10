@@ -1,13 +1,11 @@
-import PyQt5.QtWidgets
 import sys
 import logging
+from PyQt5 import QtWidgets
 from .ui.pylook import Ui_MainWindow
-from .data.data_store import DataStore
-from .pylook_object.plot_object import FigureSet
 from .parser import GenericParser
 
 
-class MainWindow(PyQt5.QtWidgets.QMainWindow, Ui_MainWindow):
+class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
@@ -42,10 +40,3 @@ def pylook():
     main_window.show()
     app.exec_()
 
-
-def data_header():
-    parser = GenericParser("DataHeader, give a summary of data file")
-    parser.add_argument("--full", action="store_true")
-    args = parser.parse_args()
-    d = DataStore()
-    print(d.summary(color_bash=True, full=args.full))
