@@ -284,7 +284,8 @@ class Base:
             if set_func is None:
                 continue
             new_value = self.effective_value(v)
-            if get_func() != new_value:
+            current_value = get_func()
+            if type(new_value) != type(current_value) or current_value != new_value:
                 logger.trace(f"We will set {k} with {v} on {item}")
                 if is_option:
                     set_func(**new_value)
