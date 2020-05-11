@@ -69,7 +69,7 @@ class MapAxes(PyLookAxes):
         for geo in self.GEO_ELT:
             self.geo_flag[geo] = kwargs.pop(geo, self.default[geo]["flag"])
             self._geo_object[geo] = dict()
-            self.geo_kwargs[geo] = dict(linewidth=.25, color='k')
+            self.geo_kwargs[geo] = dict(linewidth=0.25, color="k")
             self.geo_mappable[geo] = None
         super().__init__(*args, **kwargs)
 
@@ -160,12 +160,29 @@ class MapAxes(PyLookAxes):
 
     def end_pan(self, *args, **kwargs):
         super().end_pan(*args, **kwargs)
+        self.update_pylook_mappable()
         self.update_env()
         self.emit_axes_properties()
 
+    def update_pylook_mappable(self):
+        if not hasattr(self, 'child_id'):
+            return
+        for k, v in self.child_id.items():
+            v.remove()
+            self.child_id[k] = v.pylook_object.build(self)
+            v.pylook_object.update(self.child_id[k])
+
+    def _set_view_from_bbox(self, *args, **kwargs):
+        """call after zoom action
+        """
+        result = super()._set_view_from_bbox(*args, **kwargs)
+        self.update_env()
+        self.emit_axes_properties()
+        return result
+
     @property
     def coordinates_bbox(self):
-        raise Exception('Must be define')
+        raise Exception("Must be define")
 
     def emit_axes_properties(self):
         kwargs = dict()

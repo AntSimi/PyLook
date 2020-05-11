@@ -23,6 +23,13 @@ class Data(Base):
         self.data = dict()
         super().__init__(*args, **kwargs)
 
+
+    def copy(self):
+        new = super().copy()
+        new.data = self.data
+        return new
+
+
     def summary(self, *args, **kwargs):
         text = list()
         for k, variables in self.data.items():
@@ -37,20 +44,39 @@ class Data(Base):
         f.id = self.id
         return f
 
+    @staticmethod
+    def merge_indexs(indexs):
+        indexs_ = dict()
+        for index in indexs:
+            for axes, v in index.items():
+                if axes not in indexs_:
+                    indexs_[axes] = v
+                else:
+                    indexs_[axes] *= v
+        return indexs_
+
     def __getitem__(self, selection):
         d = DataStore()
         data = dict()
+        indexs = list()
+        for k in set(self.data.keys()) & set(selection.keys()):
+            for varname, filename in self.data[k]:
+                indexs.append(d[filename][varname].get_selection(selection[k]))
+        indexs = self.merge_indexs(indexs)
         for k, v in self.data.items():
             data[k] = list()
             for varname, filename in v:
-                data[k].append(d[filename][varname][:])
+                data[k].append(d[filename][varname][indexs])
         self.merge(data)
         return data
 
     @staticmethod
     def merge(data):
         for k, v in data.items():
-            data[k] = numpy.concatenate(v)
+            if len(v) > 1:
+                data[k] = numpy.concatenate(v)
+            else:
+                data[k] = v[0]
 
 
 class MethodLegend(Base):
@@ -113,9 +139,10 @@ class Method(MethodLegend):
                 return item
 
     def build(self, ax):
-        data = self.data[ax.coordinates_bbox]
+        data = self.data[dict(x=ax.coordinates_bbox[0], y=ax.coordinates_bbox[1])]
         mappable = self.renderer_class.func(ax, data)
         mappable.id = self.id
+        mappable.pylook_object = self.copy()
         mappable.child_id = dict()
         return mappable
 
@@ -197,6 +224,38 @@ class BaseLegend(BaseMethodLegend):
         return obj
 
 
+class Contour(BaseMethod):
+    __slots__ = tuple()
+
+    def setup(self):
+        self.name = "contour_plk"
+        self.enable_datas("2D")
+        self.needs(x="", y="", z="")
+        self.set_options(
+            cmap=self.CMAP, alpha="1",
+        )
+
+    @staticmethod
+    def func(ax, data, **kwargs):
+        return ax.contour(data["x"], data["y"], data["z"].T, **kwargs)
+
+
+class ContourF(BaseMethod):
+    __slots__ = tuple()
+
+    def setup(self):
+        self.name = "contourf_plk"
+        self.enable_datas("2D")
+        self.needs(x="", y="", z="")
+        self.set_options(
+            cmap=self.CMAP, alpha="1",
+        )
+
+    @staticmethod
+    def func(ax, data, **kwargs):
+        return ax.contourf(data["x"], data["y"], data["z"].T, **kwargs)
+
+
 class Pcolormesh(BaseMethod):
     __slots__ = tuple()
 
@@ -204,11 +263,18 @@ class Pcolormesh(BaseMethod):
         self.name = "pcolormesh_plk"
         self.enable_datas("2D")
         self.needs(x="", y="", z="")
-        self.set_options(vmin="None", vmax="None", cmap="'jet'")
+        self.set_options(
+            clim=Option(vmin="None", vmax="None"),
+            cmap=self.CMAP,
+            zorder="0",
+            alpha="1",
+            linewidths="None",
+            edgecolors=Base.COLOR,
+        )
 
     @staticmethod
     def func(ax, data, **kwargs):
-        ax.pcolormesh(*args, **kwargs)
+        return ax.pcolormesh(data["x"], data["y"], data["z"].T, **kwargs)
 
 
 class Pcolor(BaseMethod):
@@ -291,7 +357,7 @@ class Plot(BaseMethod):
 
 
 KNOWN_METHOD = dict()
-for cls in Pcolormesh, Scatter, Pcolor, Plot:
+for cls in Pcolormesh, Scatter, Pcolor, Plot, Contour, ContourF:
     m = cls()
     KNOWN_METHOD[m.name] = m
 

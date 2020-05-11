@@ -3,6 +3,7 @@ import numpy
 import os.path
 from . import DATA_LEVEL
 
+
 def handler_access(method):
     def wrapped(self, *args, **kwargs):
         flag = self.open()
@@ -157,6 +158,7 @@ class DataStore:
                 )
             )
             from .demo_dataset import fake_sat
+
             self.add_dataset(fake_sat())
 
 
@@ -313,12 +315,13 @@ class BaseDataset:
 
 class BaseVariable:
 
-    __slots__ = ("name", "parent", "attrs", "coordinates")
+    __slots__ = ("name", "parent", "attrs", "coordinates", "monotonic")
 
     def __init__(self, name, parent):
         self.name = name
         self.parent = parent
         self.attrs = None
+        self.monotonic = None
         self.populate()
 
     def populate(self, *args, **kwargs):
@@ -408,7 +411,42 @@ class BaseVariable:
         return Exception("Must be define")
 
     def __getitem__(self, selection):
-        return self.get_data()[selection]
+        if isinstance(selection, slice):
+            return self.get_data()[selection]
+        elif isinstance(selection, dict):
+            indexs = list()
+            for dim in self.dimensions:
+                indexs.append(selection.get(dim))
+            return self.get_data()[tuple(indexs)]
+        raise Exception(f"Must be study: {selection}")
+
+    @property
+    def shape(self):
+        raise Exception("Must be define")
+
+    @property
+    def is_monotonic(self):
+        if self.monotonic is None:
+            if len(self.shape) == 1:
+                data = self.get_data()
+                d = data[1:] - data[:-1]
+                self.monotonic = (d > 0).all()
+                return self.monotonic
+            self.monotonic = False
+        return self.monotonic
+
+    def get_selection(self, selection):
+        d = self.get_data()
+        dim = self.dimensions[0] if len(self.dimensions) == 1 else self.dimensions
+        if self.is_monotonic:
+            i0, i1 = numpy.interp(selection, d, numpy.arange(d.shape[0])).astype(int)
+            i1 += 1
+            i0 = max(i0 - 1, 0)
+            return {dim: slice(i0, i1)}
+        else:
+            dmin, dmax = selection
+            m = (d > dmin) * (d < dmax)
+            return {dim: m}
 
 
 class NetCDFDataset(BaseDataset):
@@ -457,6 +495,7 @@ class NetCDFVariable(BaseVariable):
         if filters is not None:
             self.attrs["__zlib"] = filters["zlib"]
         self.attrs["__dimensions"] = self.handler.dimensions
+        self.attrs["__shape"] = self.handler.shape
         # I don't know how to know output dtype without try to access at the data
         # self.attrs['output_dtype'] = self.attrs['store_dtype']
 
@@ -467,6 +506,10 @@ class NetCDFVariable(BaseVariable):
     @child_access
     def get_data(self, **indexs):
         return self.handler[:]
+
+    @property
+    def shape(self):
+        return self.attrs["__shape"]
 
 
 class MemoryDataset(BaseDataset):
@@ -499,6 +542,7 @@ class MemoryVariable(BaseVariable):
         self.name = name
         self.parent = parent
         self.value = value
+        self.monotonic = None
         self.attrs = dict() if attrs is None else attrs
         self.attrs["__dimensions"] = (
             set(str(i) for i in value.shape) if dimensions is None else dimensions
@@ -510,6 +554,10 @@ class MemoryVariable(BaseVariable):
 
     def get_data(self, **indexs):
         return self.value
+
+    @property
+    def shape(self):
+        return self.value.shape
 
 
 class ZarrDataset(BaseDataset):
