@@ -53,6 +53,15 @@ class PyLookAxes(matplotlib.axes.Axes):
         self.set_grid(grid_state)
         return mappable
 
+    def update_pylook_mappable(self):
+        logger.debug("Start mappable update")
+        if not hasattr(self, "child_id"):
+            return
+        for k, v in self.child_id.items():
+            v.remove()
+            self.child_id[k] = v.pylook_object.build(self)
+            v.pylook_object.update(self.child_id[k])
+
 
 class SimpleAxes(PyLookAxes):
     name = "standard"
@@ -169,14 +178,6 @@ class MapAxes(PyLookAxes):
         self.update_pylook_mappable()
         self.update_env()
         self.emit_axes_properties()
-
-    def update_pylook_mappable(self):
-        if not hasattr(self, "child_id"):
-            return
-        for k, v in self.child_id.items():
-            v.remove()
-            self.child_id[k] = v.pylook_object.build(self)
-            v.pylook_object.update(self.child_id[k])
 
     def _set_view_from_bbox(self, *args, **kwargs):
         """call after zoom action
