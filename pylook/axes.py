@@ -47,6 +47,12 @@ class PyLookAxes(matplotlib.axes.Axes):
             args = ((bbox.x0, bbox.y0, bbox.width, bbox.height),)
         return super().set_position(*args, **kwargs)
 
+    def pcolormesh(self, *args, **kwargs):
+        grid_state = self.get_grid()
+        mappable = super().pcolormesh(*args, **kwargs)
+        self.set_grid(grid_state)
+        return mappable
+
 
 class SimpleAxes(PyLookAxes):
     name = "standard"
@@ -165,7 +171,7 @@ class MapAxes(PyLookAxes):
         self.emit_axes_properties()
 
     def update_pylook_mappable(self):
-        if not hasattr(self, 'child_id'):
+        if not hasattr(self, "child_id"):
             return
         for k, v in self.child_id.items():
             v.remove()

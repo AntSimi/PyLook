@@ -23,12 +23,10 @@ class Data(Base):
         self.data = dict()
         super().__init__(*args, **kwargs)
 
-
     def copy(self):
         new = super().copy()
         new.data = self.data
         return new
-
 
     def summary(self, *args, **kwargs):
         text = list()
