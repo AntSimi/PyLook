@@ -177,7 +177,7 @@ class Base:
 
     def _repr_html_(self):
         text = self.summary(full=False, color_bash=False, html=True)
-        return f'<pre>{text}</pre>'
+        return f"<pre>{text}</pre>"
 
     @property
     def known_children(self):
@@ -230,7 +230,7 @@ class Base:
             c_escape = "\033[0;0m"
         elif html:
             c = f'<span style="color:{self.QT_COLOR}";>'
-            c_escape = '</span>'
+            c_escape = "</span>"
         else:
             c = c_escape = ""
         options = self.summary_options(
