@@ -230,7 +230,7 @@ class Contour(BaseMethod):
         self.enable_datas("2D")
         self.needs(x="", y="", z="")
         self.set_options(
-            cmap=self.CMAP, alpha="1",
+            cmap=self.CMAP, alpha="None",
         )
 
     @staticmethod
@@ -246,7 +246,7 @@ class ContourF(BaseMethod):
         self.enable_datas("2D")
         self.needs(x="", y="", z="")
         self.set_options(
-            cmap=self.CMAP, alpha="1",
+            cmap=self.CMAP, alpha="None",
         )
 
     @staticmethod
@@ -265,7 +265,7 @@ class Pcolormesh(BaseMethod):
             clim=Option(vmin="None", vmax="None"),
             cmap=self.CMAP,
             zorder="0",
-            alpha="1",
+            alpha="None",
             linewidths="None",
             edgecolors=Base.COLOR,
         )
@@ -319,7 +319,7 @@ class Scatter(BaseMethod):
             size="20",
             label="''",
             zorder="100",
-            alpha="1",
+            alpha="None",
             linewidths="0",
             edgecolors=Base.COLOR_K,
             marker=self.FILLED_MARKERS,
@@ -344,7 +344,7 @@ class Plot(BaseMethod):
             linewidth="1",
             label="''",
             marker=self.MARKERS,
-            markersize="1",
+            markersize="1.",
             color=Base.COLOR_K,
             zorder="110",
         )
