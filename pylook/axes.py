@@ -173,17 +173,20 @@ class MapAxes(PyLookAxes):
         for geo in self.GEO_ELT:
             self.update_geo(geo)
 
-    def end_pan(self, *args, **kwargs):
-        super().end_pan(*args, **kwargs)
+    def update_renderer(self):
         self.update_pylook_mappable()
         self.update_env()
+
+    def end_pan(self, *args, **kwargs):
+        super().end_pan(*args, **kwargs)
+        self.update_renderer()
         self.emit_axes_properties()
 
     def _set_view_from_bbox(self, *args, **kwargs):
         """call after zoom action
         """
         result = super()._set_view_from_bbox(*args, **kwargs)
-        self.update_env()
+        self.update_renderer()
         self.emit_axes_properties()
         return result
 
@@ -235,7 +238,7 @@ class PlatCarreAxes(MapAxes):
         y0, y1 = properties.get("llcrnrlat", None), properties.get("urcrnrlat", None)
         if y0 is not None and y1 is not None:
             self.set_ylim(y0, y1)
-        self.update_env()
+        self.update_renderer()
 
 
 class ProjTransform(mtransforms.Transform):
