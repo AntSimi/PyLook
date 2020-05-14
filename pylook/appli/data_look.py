@@ -6,7 +6,7 @@ import copy
 from ..parser import GenericParser
 from ..pylook_object.base import Choices
 from ..pylook_object.plot_object import FigureSet, Figure, SimpleSubplot, GeoSubplot
-from ..pylook_object.method import KNOWN_METHOD, best_geo_method, Method, Legend, Data
+from ..pylook_object.method import KNOWN_METHOD, KNOWN_LEGEND, best_geo_method, Method, Legend, Data
 from ..data.data_store import DataStore
 
 
@@ -216,13 +216,13 @@ class DataLookParser(GenericParser):
         group.add_argument("--data_index", nargs="*")
         group.add_argument("--data", nargs="*")
         group.add_argument("--method", type=self.method_object, help=KNOWN_METHOD)
-        # group.add_argument("--legends", nargs="*", type=self.legend_object)
+        group.add_argument("--legends", nargs="*", type=self.legend_object)
         group.add_argument(
             "--method_options", nargs="*", obj="", populate_kwargs=method_populate,
         )
-        # group.add_argument(
-        #     "--legend_options", nargs="*", obj="legends", populate_kwargs=None
-        # )
+        group.add_argument(
+            "--legend_options", nargs="*"
+        )
 
     def data_check(self, namespace):
         if namespace.data is None and namespace.filenames:
@@ -416,7 +416,12 @@ def build_items(cls, options):
         for key in keys:
             if key == ":":
                 continue
-            class_ = cls.get(key, cls[":"]) if isinstance(cls, MultiItems) else cls
+            if isinstance(cls, MultiItems):
+                class_ = cls.get(key)
+                if class_ is None:
+                    class_ = cls[":"]
+            else:
+                class_ = cls
             options_ = (
                 options.get(key, dict()) if isinstance(options, MultiItems) else options
             )
@@ -485,6 +490,9 @@ def add_data(methods, datas, variables):
             d.data["y"].append((variable.geo_coordinates["y"], dataset.key))
             d.data["z"].append((variable.name, dataset.key))
         methods[label].append(d)
+        if len(m.legend_available):
+            methods[label].append(KNOWN_LEGEND[m.legend_available[0]].exchange_object())
+
     if len(labels) > 1 and ":" in methods:
         methods.pop(":")
 
@@ -499,6 +507,7 @@ def data_look(args=None):
     all_s = build_items(args.subplot, args.subplot_options)
     all_m = build_items(args.method, args.method_options)
     add_data(all_m, args.data, args.variable)
+    # add_legend(all_m, args.legends, args.legend_options)
     distribute_child(all_m, all_s, parser.labels)
     distribute_child(all_s, all_f, parser.labels)
     distribute_child(all_f, all_fs, parser.labels)
@@ -521,6 +530,7 @@ def data_look(args=None):
         return
 
     from PyQt5 import QtWidgets
+
     app = QtWidgets.QApplication(list())
     for fs in all_fs.values():
         fs.build()

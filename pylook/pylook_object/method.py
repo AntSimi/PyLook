@@ -2,10 +2,16 @@ import numpy
 import matplotlib.markers as mmarkers
 import matplotlib.cm as mcm
 import matplotlib.collections as mcollections
+import matplotlib.contour as mcontour
+import matplotlib.colorbar as mcolorbar
 import copy
+import logging
 from .base import Base, Choices, Option
 from ..data import DATA_LEVEL
 from ..data.data_store import DataStore
+
+
+logger = logging.getLogger("pylook")
 
 
 class FakeObject:
@@ -45,27 +51,35 @@ class Data(Base):
     @staticmethod
     def merge_indexs(indexs):
         indexs_ = dict()
-        for index in indexs:
-            for axes, v in index.items():
-                if axes not in indexs_:
-                    indexs_[axes] = v
-                else:
-                    indexs_[axes] *= v
+        for filename, group in indexs.items():
+            if filename not in indexs_:
+                indexs_[filename] = dict()
+            for index in group:
+                for axes, v in index.items():
+                    if axes not in indexs_[filename]:
+                        indexs_[filename][axes] = v
+                    else:
+                        indexs_[filename][axes] *= v
         return indexs_
 
     def __getitem__(self, selection):
         d = DataStore()
         data = dict()
-        indexs = list()
+        indexs = dict()
         for k in set(self.data.keys()) & set(selection.keys()):
             for varname, filename in self.data[k]:
-                indexs.append(d[filename][varname].get_selection(selection[k]))
+                if filename not in indexs:
+                    indexs[filename] = list()
+                indexs[filename].append(
+                    d[filename][varname].get_selection(selection[k])
+                )
         indexs = self.merge_indexs(indexs)
         for k, v in self.data.items():
             data[k] = list()
             for varname, filename in v:
-                data[k].append(d[filename][varname][indexs])
+                data[k].append(d[filename][varname][indexs[filename]])
         self.merge(data)
+        logger.info(",".join(f"{k} : {v.shape}" for k, v in data.items()))
         return data
 
     @staticmethod
@@ -104,6 +118,7 @@ class MethodLegend(Base):
         new.start_current_value()
         new.update_options(new.options, options)
         new.target = self.target
+        new.building_options = self.building_options
         return new
 
 
@@ -115,6 +130,16 @@ class Legend(MethodLegend):
     @property
     def known_children(self):
         return []
+
+    @property
+    def renderer_class(self):
+        return KNOWN_LEGEND[self.target]
+
+    def build(self, mappable):
+        legend = self.renderer_class.func(mappable)
+        legend.id = self.id
+        legend.pylook_object = self.copy()
+        return legend
 
 
 class Method(MethodLegend):
@@ -150,11 +175,13 @@ class BaseMethodLegend:
         "_name",
         "help",
         "options",
+        "building_options",
     )
 
     def __init__(self):
         self._name = "noname"
         self.options = dict()
+        self.building_options = list()
         self.help = dict()
         self.setup()
 
@@ -208,6 +235,7 @@ class BaseMethod(BaseMethodLegend):
         obj.init_value = copy.deepcopy(self.options)
         obj.start_current_value()
         obj.target = self.name
+        obj.building_options = tuple(self.building_options)
         return obj
 
 
@@ -222,6 +250,33 @@ class BaseLegend(BaseMethodLegend):
         return obj
 
 
+class Colorbar(mcolorbar.Colorbar):
+    def get_label(self):
+        return self._label
+
+
+class ColorbarL(BaseLegend):
+    __slots__ = tuple()
+
+    def setup(self):
+        self.name = "colorbar_plk"
+        self.set_options(label="''", ticks="None")
+
+    @staticmethod
+    def func(mappable, **kwargs):
+        ax = mappable.axes
+        v = ax.get_position()
+        cax = ax.figure.add_axes((v.x1 + 0.02, v.y0, 0.01, v.height))
+        cb = Colorbar(cax, mappable, **kwargs)
+        return cb
+
+
+class ContourCollection(mcontour.QuadContourSet):
+    def remove(self):
+        for collection in self.collections:
+            collection.remove()
+
+
 class Contour(BaseMethod):
     __slots__ = tuple()
 
@@ -229,13 +284,13 @@ class Contour(BaseMethod):
         self.name = "contour_plk"
         self.enable_datas("2D")
         self.needs(x="", y="", z="")
-        self.set_options(
-            cmap=self.CMAP, alpha="None",
-        )
+        self.set_options(cmap=self.CMAP, alpha="None")
 
     @staticmethod
     def func(ax, data, **kwargs):
-        return ax.contour(data["x"], data["y"], data["z"].T, **kwargs)
+        m = ax.contour(data["x"], data["y"], data["z"].T, **kwargs)
+        m.__class__ = ContourCollection
+        return m
 
 
 class ContourF(BaseMethod):
@@ -245,13 +300,14 @@ class ContourF(BaseMethod):
         self.name = "contourf_plk"
         self.enable_datas("2D")
         self.needs(x="", y="", z="")
-        self.set_options(
-            cmap=self.CMAP, alpha="None",
-        )
+        self.building_options.append("levels")
+        self.set_options(cmap=self.CMAP, alpha="None", levels=None)
 
     @staticmethod
     def func(ax, data, **kwargs):
-        return ax.contourf(data["x"], data["y"], data["z"].T, **kwargs)
+        m = ax.contourf(data["x"], data["y"], data["z"].T, **kwargs)
+        m.__class__ = ContourCollection
+        return m
 
 
 class Pcolormesh(BaseMethod):
@@ -269,10 +325,35 @@ class Pcolormesh(BaseMethod):
             linewidths="None",
             edgecolors=Base.COLOR,
         )
+        self.legend_available.append("colorbar_plk")
 
     @staticmethod
     def func(ax, data, **kwargs):
         return ax.pcolormesh(data["x"], data["y"], data["z"].T, **kwargs)
+
+
+class HexBin(BaseMethod):
+    __slots__ = tuple()
+
+    def setup(self):
+        self.name = "hexbin_plk"
+        self.enable_datas("1D")
+        self.needs(x="", y="", z="")
+        self.set_options(
+            clim=Option(vmin="None", vmax="None"),
+            cmap=self.CMAP,
+            zorder="0",
+            alpha="None",
+            mincnt="2",
+            linewidths="None",
+            edgecolors=Base.COLOR,
+        )
+        # self.legend_available.append("colorbar_plk")
+
+    @staticmethod
+    def func(ax, data, **kwargs):
+        kwargs["gridsize"] = (100, 50)
+        return ax.hexbin(data["x"], data["y"], data["z"], **kwargs)
 
 
 class Pcolor(BaseMethod):
@@ -355,21 +436,14 @@ class Plot(BaseMethod):
 
 
 KNOWN_METHOD = dict()
-for cls in Pcolormesh, Scatter, Pcolor, Plot, Contour, ContourF:
+for cls in Pcolormesh, Scatter, Pcolor, Plot, Contour, ContourF, HexBin:
     m = cls()
     KNOWN_METHOD[m.name] = m
 
-
-class Colorbar(BaseLegend):
-    __slots__ = tuple()
-
-    def setup(self):
-        self.name = colorbar_plk
-        self.set_options(label="'colorbar'")
-
-    @staticmethod
-    def func(ax, mappable, *args, **kwargs):
-        matplotlib.colorbar.Colorbar(colorbar_ax, mappable, *args, **kwargs)
+KNOWN_LEGEND = dict()
+for cls in (ColorbarL,):
+    m = cls()
+    KNOWN_LEGEND[m.name] = m
 
 
 def best_geo_method(geo_datatype):

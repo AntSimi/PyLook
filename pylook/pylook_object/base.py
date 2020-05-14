@@ -268,7 +268,7 @@ class Base:
             set_func, get_func = lambda value: item.set_(k, value), lambda: item.get_(k)
         if set_func is None or get_func is None:
             logger.warning(
-                f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist {k}"
+                f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist for {k}"
             )
             return None, None
         return set_func, get_func
