@@ -344,7 +344,7 @@ class HexBin(BaseMethod):
             cmap=self.CMAP,
             zorder="0",
             alpha="None",
-            mincnt="2",
+            # mincnt="2",
             linewidths="None",
             edgecolors=Base.COLOR,
         )
@@ -353,7 +353,10 @@ class HexBin(BaseMethod):
     @staticmethod
     def func(ax, data, **kwargs):
         kwargs["gridsize"] = (100, 50)
-        return ax.hexbin(data["x"], data["y"], data["z"], **kwargs)
+        if len(data['z'].shape) > 1:
+            return ax.hexbin(data["x"].reshape(-1), data["y"].reshape(-1), data["z"].reshape(-1), **kwargs)
+        else:
+            return ax.hexbin(data["x"], data["y"], data["z"], **kwargs)
 
 
 class Pcolor(BaseMethod):

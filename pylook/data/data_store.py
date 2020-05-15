@@ -415,9 +415,13 @@ class BaseVariable:
             return self.get_data()[selection]
         elif isinstance(selection, dict):
             indexs = list()
-            for dim in self.dimensions:
-                indexs.append(selection.get(dim))
-            return self.get_data()[tuple(indexs)]
+            if self.dimensions in selection:
+                indexs = selection[self.dimensions]
+            else:
+                for dim in self.dimensions:
+                    indexs.append(selection.get(dim))
+                indexs = tuple(indexs)
+            return self.get_data()[indexs]
         raise Exception(f"Must be study: {selection}")
 
     @property
