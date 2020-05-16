@@ -352,11 +352,18 @@ class HexBin(BaseMethod):
 
     @staticmethod
     def func(ax, data, **kwargs):
-        kwargs["gridsize"] = (100, 50)
-        if len(data['z'].shape) > 1:
-            return ax.hexbin(data["x"].reshape(-1), data["y"].reshape(-1), data["z"].reshape(-1), **kwargs)
+        kwargs["gridsize"] = (200, 60)
+        if len(data["z"].shape) > 1:
+            mappable = ax.hexbin(
+                data["x"].reshape(-1),
+                data["y"].reshape(-1),
+                data["z"].reshape(-1),
+                **kwargs,
+            )
         else:
-            return ax.hexbin(data["x"], data["y"], data["z"], **kwargs)
+            mappable = ax.hexbin(data["x"], data["y"], data["z"], **kwargs)
+        mappable.set_antialiased(False)
+        return mappable
 
 
 class Pcolor(BaseMethod):
