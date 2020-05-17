@@ -17,6 +17,9 @@ logger = logging.getLogger("pylook")
 class FakeObject:
     __slot__ = ("id",)
 
+    def remove(self):
+        pass
+
 
 class Data(Base):
     __slot__ = ("data",)
@@ -253,6 +256,9 @@ class BaseLegend(BaseMethodLegend):
 class Colorbar(mcolorbar.Colorbar):
     def get_label(self):
         return self._label
+    
+    def remove(self):
+        self.ax.remove()
 
 
 class ColorbarL(BaseLegend):
@@ -302,6 +308,7 @@ class ContourF(BaseMethod):
         self.needs(x="", y="", z="")
         self.building_options.append("levels")
         self.set_options(cmap=self.CMAP, alpha="None", levels=None)
+        self.legend_available.append("colorbar_plk")
 
     @staticmethod
     def func(ax, data, **kwargs):
@@ -348,7 +355,7 @@ class HexBin(BaseMethod):
             linewidths="None",
             edgecolors=Base.COLOR,
         )
-        # self.legend_available.append("colorbar_plk")
+        self.legend_available.append("colorbar_plk")
 
     @staticmethod
     def func(ax, data, **kwargs):
@@ -374,6 +381,7 @@ class Pcolor(BaseMethod):
         self.enable_datas("2DU")
         self.needs(x="", y="", z="")
         self.set_options(vmin="None", vmax="None", cmap="'jet'")
+        self.legend_available.append("colorbar_plk")
 
     @staticmethod
     def func(ax, data, **kwargs):
@@ -415,6 +423,7 @@ class Scatter(BaseMethod):
             edgecolors=Base.COLOR_K,
             marker=self.FILLED_MARKERS,
         )
+        self.legend_available.append("colorbar_plk")
 
     @staticmethod
     def func(ax, data, **kwargs):

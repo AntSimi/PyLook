@@ -58,6 +58,8 @@ class PyLookAxes(matplotlib.axes.Axes):
         if not hasattr(self, "child_id"):
             return
         for k, v in self.child_id.items():
+            for k_, v_ in v.child_id.items():
+                v_.remove()
             v.remove()
             self.child_id[k] = v.pylook_object.build(self)
             v.pylook_object.update(self.child_id[k])
