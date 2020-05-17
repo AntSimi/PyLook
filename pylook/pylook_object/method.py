@@ -256,7 +256,7 @@ class BaseLegend(BaseMethodLegend):
 class Colorbar(mcolorbar.Colorbar):
     def get_label(self):
         return self._label
-    
+
     def remove(self):
         self.ax.remove()
 
@@ -359,7 +359,12 @@ class HexBin(BaseMethod):
 
     @staticmethod
     def func(ax, data, **kwargs):
-        kwargs["gridsize"] = (200, 60)
+        (x0, x1), (y0, y1) = ax.coordinates_bbox
+        dx, dy = x1 - x0, y1 - y0
+        w, h = ax.get_window_extent().size
+        N = w / 8
+        kwargs["gridsize"] = int(N), int(N * dy / dx * 2 / 3)
+        kwargs["extent"] = (x0, x1, y0, y1)
         if len(data["z"].shape) > 1:
             mappable = ax.hexbin(
                 data["x"].reshape(-1),
