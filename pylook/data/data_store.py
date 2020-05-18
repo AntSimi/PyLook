@@ -439,7 +439,9 @@ class BaseVariable:
             self.monotonic = False
         return self.monotonic
 
-    def get_selection(self, selection):
+    def get_selection(self, selection, wrap=False):
+        """wrap is used only for sphere wrapping (modulo 360)
+        """
         d = self.get_data()
         dim = self.dimensions[0] if len(self.dimensions) == 1 else self.dimensions
         if self.is_monotonic:
@@ -449,7 +451,9 @@ class BaseVariable:
             return {dim: slice(i0, i1)}
         else:
             dmin, dmax = selection
-            m = (d > dmin) * (d < dmax)
+            if wrap:
+                d = (d - dmin) % 360 + dmin
+            m = (d >= dmin) * (d < dmax)
             return {dim: m}
 
 

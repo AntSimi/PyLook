@@ -66,27 +66,49 @@ class Data(Base):
         return indexs_
 
     def __getitem__(self, selection):
+        x = selection.get("x")
+        if x is not None:
+            x0, x1 = x
+            data = dict()
+            for x0_ in numpy.arange(x0, x1, 360):
+                selection_ = selection.copy()
+                selection_["x"] = (x0_, min(x0_ + 360, x1))
+                for k, v in self.get_data(selection_).items():
+                    if k not in data:
+                        data[k] = list()
+                    if k == "x":
+                        data[k].extend((elt - x0_) % 360 + x0_ for elt in v)
+                    else:
+                        data[k].extend(v)
+        else:
+            data = self.get_data(selection)
+        self.concatenate(data)
+        logger.info(",".join(f"{k} : {v.shape}" for k, v in data.items()))
+        return data
+
+    def get_data(self, selection):
+        """360 degrees max in x, because wrapping will be activate
+        """
         d = DataStore()
         data = dict()
         indexs = dict()
         for k in set(self.data.keys()) & set(selection.keys()):
+            logger.debug(f"search selection on {k} axis with {selection[k]} windows")
             for varname, filename in self.data[k]:
                 if filename not in indexs:
                     indexs[filename] = list()
                 indexs[filename].append(
-                    d[filename][varname].get_selection(selection[k])
+                    d[filename][varname].get_selection(selection[k], wrap=k == "x")
                 )
         indexs = self.merge_indexs(indexs)
         for k, v in self.data.items():
             data[k] = list()
             for varname, filename in v:
                 data[k].append(d[filename][varname][indexs[filename]])
-        self.merge(data)
-        logger.info(",".join(f"{k} : {v.shape}" for k, v in data.items()))
         return data
 
     @staticmethod
-    def merge(data):
+    def concatenate(data):
         for k, v in data.items():
             if len(v) > 1:
                 data[k] = numpy.concatenate(v)
