@@ -19,3 +19,16 @@ def fake_sat(time_step=10, altitude=1340, inclination=66, longitude0=0):
         MemoryVariable("longitude", lon, ("t",)),
         MemoryVariable("latitude", lat, ("t",)),
     )
+
+
+def grid():
+    N = 0.125
+    x, y = numpy.arange(0, 360, N), numpy.arange(-80, 80, N)
+    x_, y_ = numpy.meshgrid(x, y)
+    z = numpy.sin(4 * numpy.radians(x_)) * numpy.cos(4 * numpy.radians(y_))
+    return MemoryDataset(
+        "2D_wave_global",
+        MemoryVariable("lon", x.astype('f4'), ("longitude",)),
+        MemoryVariable("lat", y.astype('f4'), ("latitude",)),
+        MemoryVariable("z", z.astype('f4'), ("latitude", "longitude")),
+    )

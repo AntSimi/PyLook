@@ -76,6 +76,9 @@ class DataStore:
             self.store[dataset.key] = dataset
             return dataset.key
 
+        def add_datasets(self, *datasets):
+            return [self.add_dataset(dataset) for dataset in datasets]
+
         def add_paths(self, filenames):
             return list(self.add_path(filename) for filename in filenames)
 
@@ -157,9 +160,9 @@ class DataStore:
                     MemoryVariable("z", numpy.ones((20, 25))),
                 )
             )
-            from .demo_dataset import fake_sat
+            from .demo_dataset import fake_sat, grid
 
-            self.add_dataset(fake_sat())
+            self.add_datasets(fake_sat(), grid())
 
 
 class BaseDataset:
@@ -407,6 +410,18 @@ class BaseVariable:
                 return DATA_LEVEL["1D"]
             return DATA_LEVEL["2DU"]
 
+    @property
+    def need_geo_transpose(self):
+        if self.geo_datatype != DATA_LEVEL["2D"]:
+            return False
+        dims_coord = {
+            self.parent[v].dimensions[0]: k for k, v in self.geo_coordinates.items()
+        }
+        for dim in self.dimensions:
+            v = dims_coord.get(dim)
+            if v is not None:
+                return True if v == "y" else False
+
     def get_data(self, **indexs):
         return Exception("Must be define")
 
@@ -439,19 +454,35 @@ class BaseVariable:
             self.monotonic = False
         return self.monotonic
 
-    def get_selection(self, selection, wrap=False):
+    def get_selection(self, selection, axes, ax_size=None):
         """wrap is used only for sphere wrapping (modulo 360)
         """
         d = self.get_data()
         dim = self.dimensions[0] if len(self.dimensions) == 1 else self.dimensions
+        dmin, dmax = selection
         if self.is_monotonic:
-            i0, i1 = numpy.interp(selection, d, numpy.arange(d.shape[0])).astype(int)
-            i1 += 1
-            i0 = max(i0 - 1, 0)
-            return {dim: slice(i0, i1)}
+            i0, i1 = numpy.round(
+                numpy.interp(selection, d, numpy.arange(d.shape[0]))
+            ).astype(int)
+            if d[i1] < dmax:
+                i1 += 1
+            if d[i0] > dmin:
+                i0 = max(i0 - 1, 0)
+            step = None
+            if ax_size is not None and axes in ("x", "y"):
+                w, h = ax_size
+                d_sel = dmax - dmin
+                d_axes = d[i1 - 1] - d[i0]
+                di = i1 - i0
+                # we search a step if there a lot of index
+                if di > 4:
+                    di *= d_sel / d_axes
+                    step = int(numpy.ceil(di / (w if axes == "x" else h)))
+                    if step <= 1:
+                        step = None
+            return {dim: slice(i0, i1, step)}
         else:
-            dmin, dmax = selection
-            if wrap:
+            if axes == "x":
                 d = (d - dmin) % 360 + dmin
             m = (d >= dmin) * (d < dmax)
             return {dim: m}

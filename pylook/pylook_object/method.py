@@ -89,6 +89,7 @@ class Data(Base):
     def get_data(self, selection):
         """360 degrees max in x, because wrapping will be activate
         """
+        ax = selection.get("ax")
         d = DataStore()
         data = dict()
         indexs = dict()
@@ -97,14 +98,21 @@ class Data(Base):
             for varname, filename in self.data[k]:
                 if filename not in indexs:
                     indexs[filename] = list()
-                indexs[filename].append(
-                    d[filename][varname].get_selection(selection[k], wrap=k == "x")
+                sel = d[filename][varname].get_selection(
+                    selection[k], axes=k, ax_size=ax.size
                 )
+                indexs[filename].append(sel)
         indexs = self.merge_indexs(indexs)
         for k, v in self.data.items():
             data[k] = list()
             for varname, filename in v:
-                data[k].append(d[filename][varname][indexs[filename]])
+                v_handler = d[filename][varname]
+                values = v_handler[indexs[filename]]
+                # We will check if we need to transpose data
+                if "x" in selection and "y" in selection:
+                    if v_handler.need_geo_transpose:
+                        values = values.T
+                data[k].append(values)
         return data
 
     @staticmethod
@@ -187,7 +195,9 @@ class Method(MethodLegend):
                 return item
 
     def build(self, ax):
-        data = self.data[dict(x=ax.coordinates_bbox[0], y=ax.coordinates_bbox[1])]
+        data = self.data[
+            dict(x=ax.coordinates_bbox[0], y=ax.coordinates_bbox[1], ax=ax)
+        ]
         mappable = self.renderer_class.func(ax, data)
         mappable.id = self.id
         mappable.pylook_object = self.copy()
@@ -383,7 +393,7 @@ class HexBin(BaseMethod):
     def func(ax, data, **kwargs):
         (x0, x1), (y0, y1) = ax.coordinates_bbox
         dx, dy = x1 - x0, y1 - y0
-        w, h = ax.get_window_extent().size
+        w, h = ax.size
         N = w / 8
         kwargs["gridsize"] = int(N), int(N * dy / dx * 2 / 3)
         kwargs["extent"] = (x0, x1, y0, y1)

@@ -21,6 +21,10 @@ class PyLookAxes(matplotlib.axes.Axes):
         self.callback_axes_properties = None
         self.child_id = dict()
 
+    @property
+    def size(self):
+        return self.get_window_extent().size
+
     def set_callback_axes_properties(self, callback):
         self.callback_axes_properties = callback
 
