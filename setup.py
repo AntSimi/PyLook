@@ -5,7 +5,7 @@ import versioneer
 min_version = (3, 7)
 
 setup(
-    name="pylook",
+    name="pylook-map",
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description="Python Distribution Utilities",
