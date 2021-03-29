@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
+import versioneer
 
 min_version = (3, 7)
 
 setup(
     name="pylook",
-    version="0.0",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description="Python Distribution Utilities",
     author="Antoine Delepoulle",
     author_email="delepoulle.a@gmail.com",

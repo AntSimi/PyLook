@@ -44,6 +44,7 @@ class GSHHSFile:
             self.i_first_seg_bin = h.variables[self.INDEX_FIRST_SEG_IN_BIN][:]
             self.nb_seg_bin = h.variables[self.NB_SEG_BY_BIN][:]
             self.i_first_pt_seg = h.variables[self.INDEX_FIRST_PT_IN_SEG][:]
+
     def lines(
         self,
         llcrnrlon=0,
