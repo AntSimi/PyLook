@@ -264,8 +264,8 @@ class Base:
             return None, None
         set_func = getattr(item, f"set_{k}", None)
         get_func = getattr(item, f"get_{k}", None)
-        if set_func is None and hasattr(item, "has_") and item.has_(k):
-            set_func, get_func = lambda value: item.set_(k, value), lambda: item.get_(k)
+        if set_func is None and hasattr(item, "has_") and item.has_cbr(k):
+            set_func, get_func = lambda value: item.set_cbr(k, value), lambda: item.get_cbr(k)
         if set_func is None or get_func is None:
             logger.warning(
                 f"{self.__class__.__name__} : set ({set_func}) or/and get ({get_func}) doesn't exist for {k}"

@@ -4,7 +4,6 @@ import netCDF4
 import numba
 import numpy
 import matplotlib.collections as mc
-import os
 
 
 class GSHHSFile:

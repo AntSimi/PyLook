@@ -94,14 +94,14 @@ class MapAxes(PyLookAxes):
             self.geo_mappable[geo] = None
         super().__init__(*args, **kwargs)
 
-    def has_(self, key):
+    def has_cbr(self, key):
         return (
             key.startswith("coast")
             or key.startswith("border")
             or key.startswith("river")
         )
 
-    def set_(self, key, value):
+    def set_cbr(self, key, value):
         keys = key.split("_")
         if len(keys) == 1:
             self.geo_flag[key] = value
@@ -109,13 +109,13 @@ class MapAxes(PyLookAxes):
         else:
             geo, option = keys
             if self.geo_mappable[geo] is not None:
-                if value is "None":
+                if value is None:
                     value = self.default[geo][option]
                 set_func = getattr(self.geo_mappable[geo], f"set_{option}")
                 set_func(value)
                 self.geo_kwargs[geo][option] = value
 
-    def get_(self, key):
+    def get_cbr(self, key):
         keys = key.split("_")
         if len(keys) == 1:
             return self.geo_flag[keys[0]]
