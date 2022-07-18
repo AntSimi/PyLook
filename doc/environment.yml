@@ -3,8 +3,7 @@ channels:
   - defaults
 dependencies:
   - python=3.10
+  - pyproj
   - pip:
-    - pyproj
-    - cython
     - sphinx_rtd_theme
     - sphinx>=3.1
