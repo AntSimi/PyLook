@@ -52,9 +52,9 @@ class PyLookAxes(matplotlib.axes.Axes):
         return super().set_position(*args, **kwargs)
 
     def pcolormesh(self, *args, **kwargs):
-        grid_state = self.get_grid()
+        # grid_state = self.get_grid()
         mappable = super().pcolormesh(*args, **kwargs)
-        self.set_grid(grid_state)
+        # self.set_grid(grid_state)
         return mappable
 
     def update_pylook_mappable(self):
