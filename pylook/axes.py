@@ -28,12 +28,6 @@ class PyLookAxes(matplotlib.axes.Axes):
     def set_callback_axes_properties(self, callback):
         self.callback_axes_properties = callback
 
-    def set_grid(self, state):
-        return self.grid(state)
-
-    def get_grid(self):
-        return self.xaxis._gridOnMajor
-
     def set_position(self, *args, **kwargs):
         # TODO maybe compare get_position result with args before to apply
         if type(args[0]) is int:
@@ -52,9 +46,7 @@ class PyLookAxes(matplotlib.axes.Axes):
         return super().set_position(*args, **kwargs)
 
     def pcolormesh(self, *args, **kwargs):
-        # grid_state = self.get_grid()
         mappable = super().pcolormesh(*args, **kwargs)
-        # self.set_grid(grid_state)
         return mappable
 
     def update_pylook_mappable(self):
